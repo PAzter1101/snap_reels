@@ -92,6 +92,7 @@ class ReelConfig {
   final bool showBookmarkButton;
   final bool showDownloadButton;
   final bool showMoreButton;
+  final bool showCommentButton;
   final bool showBottomControls;
 
   /// Button organization - move to more menu
@@ -154,6 +155,7 @@ class ReelConfig {
     this.showBookmarkButton = true,
     this.showDownloadButton = true,
     this.showMoreButton = true,
+    this.showCommentButton = true,
     this.showBottomControls = false,
     this.bookmarkInMoreMenu = true,
     this.downloadInMoreMenu = true,
@@ -204,6 +206,7 @@ class ReelConfig {
     bool? showBookmarkButton,
     bool? showDownloadButton,
     bool? showMoreButton,
+    bool? showCommentButton,
     bool? showBottomControls,
     bool? bookmarkInMoreMenu,
     bool? downloadInMoreMenu,
@@ -258,6 +261,7 @@ class ReelConfig {
       showBookmarkButton: showBookmarkButton ?? this.showBookmarkButton,
       showDownloadButton: showDownloadButton ?? this.showDownloadButton,
       showMoreButton: showMoreButton ?? this.showMoreButton,
+      showCommentButton: showCommentButton ?? this.showCommentButton,
       showBottomControls: showBottomControls ?? this.showBottomControls,
       bookmarkInMoreMenu: bookmarkInMoreMenu ?? this.bookmarkInMoreMenu,
       downloadInMoreMenu: downloadInMoreMenu ?? this.downloadInMoreMenu,
