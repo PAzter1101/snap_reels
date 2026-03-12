@@ -16,7 +16,7 @@ class CacheManager {
   late Dio _dio;
   late Directory _cacheDirectory;
   late CacheConfig _config;
-  bool _isInitialized = false;
+  final bool _isInitialized = false;
 
   final Map<String, CacheItem> _cacheIndex = {};
   final Map<String, Future<String?>> _downloadFutures = {};
