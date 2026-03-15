@@ -124,7 +124,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _enableAutoPlay.value,
                   onChanged: (value) => _enableAutoPlay.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
             Obx(() => SwitchListTile(
                   title: const Text('Mute by Default',
@@ -133,7 +133,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _enableMute.value,
                   onChanged: (value) => _enableMute.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
             const Divider(color: Colors.white30),
             Obx(() => ListTile(
@@ -170,7 +170,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _enableLongPressControls.value,
                   onChanged: (value) => _enableLongPressControls.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
             Obx(() => SwitchListTile(
                   title: const Text('Double Tap Like',
@@ -179,7 +179,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _enableDoubleTapLike.value,
                   onChanged: (value) => _enableDoubleTapLike.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
             Obx(() => SwitchListTile(
                   title: const Text('Gesture Controls',
@@ -188,7 +188,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _enableGestures.value,
                   onChanged: (value) => _enableGestures.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
           ],
         ),
@@ -210,7 +210,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _enableCaching.value,
                   onChanged: (value) => _enableCaching.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
             const Divider(color: Colors.white30),
             Obx(() => ListTile(
@@ -252,7 +252,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                       style: TextStyle(color: Colors.white70)),
                   value: _showProgressBar.value,
                   onChanged: (value) => _showProgressBar.value = value,
-                  activeColor: Colors.white,
+                  activeThumbColor: Colors.white,
                 )),
             const ListTile(
               title: Text('Play/Pause Icon',

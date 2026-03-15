@@ -104,14 +104,15 @@ class _ReelActionsState extends State<ReelActions>
           },
         ),
         const SizedBox(height: 16),
-        // Comment button
-        _buildActionButton(
-          icon: IconlyLight.chat,
-          iconColor: widget.config.textColor,
-          count: widget.reel.commentsCount,
-          onTap: () => _handleComment(controller),
-        ),
-        const SizedBox(height: 16),
+        // Comment button (only show if enabled)
+        if (widget.config.showCommentButton)
+          _buildActionButton(
+            icon: IconlyLight.chat,
+            iconColor: widget.config.textColor,
+            count: widget.reel.commentsCount,
+            onTap: () => _handleComment(controller),
+          ),
+        if (widget.config.showCommentButton) const SizedBox(height: 16),
         // Share button
         _buildActionButton(
           icon: IconlyLight.send,

@@ -446,7 +446,7 @@ class ReelModel {
 
   @override
   String toString() {
-    return 'ReelModel(id: $id, videoUrl: ${effectiveVideoUrl}, format: ${videoFormat.name}, user: ${user?.username})';
+    return 'ReelModel(id: $id, videoUrl: $effectiveVideoUrl, format: ${videoFormat.name}, user: ${user?.username})';
   }
 
   @override
