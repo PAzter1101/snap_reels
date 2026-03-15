@@ -113,6 +113,14 @@ class ReelConfig {
   final void Function(ReelModel)? onShareTap;
   final void Function(ReelModel)? onDownloadTap;
   final void Function(String)? onHashtagTap;
+  final void Function(ReelModel)? onReportTap;
+  final void Function(ReelModel)? onBlockTap;
+  final void Function(ReelModel)? onCopyLinkTap;
+
+  /// Labels for more menu items (override to localize)
+  final String reportLabel;
+  final String blockLabel;
+  final String copyLinkLabel;
 
   /// New fields
   final int? preloadRange;
@@ -165,6 +173,12 @@ class ReelConfig {
     this.onShareTap,
     this.onDownloadTap,
     this.onHashtagTap,
+    this.onReportTap,
+    this.onBlockTap,
+    this.onCopyLinkTap,
+    this.reportLabel = 'Report',
+    this.blockLabel = 'Block',
+    this.copyLinkLabel = 'Copy link',
     this.preloadRange = 1,
     this.autoPlay = true,
     this.loop = true,
@@ -215,6 +229,12 @@ class ReelConfig {
     void Function(ReelModel)? onShareTap,
     void Function(ReelModel)? onDownloadTap,
     void Function(String)? onHashtagTap,
+    void Function(ReelModel)? onReportTap,
+    void Function(ReelModel)? onBlockTap,
+    void Function(ReelModel)? onCopyLinkTap,
+    String? reportLabel,
+    String? blockLabel,
+    String? copyLinkLabel,
     int? preloadRange,
     bool? autoPlay,
     bool? loop,
@@ -269,6 +289,12 @@ class ReelConfig {
       onShareTap: onShareTap ?? this.onShareTap,
       onDownloadTap: onDownloadTap ?? this.onDownloadTap,
       onHashtagTap: onHashtagTap ?? this.onHashtagTap,
+      onReportTap: onReportTap ?? this.onReportTap,
+      onBlockTap: onBlockTap ?? this.onBlockTap,
+      onCopyLinkTap: onCopyLinkTap ?? this.onCopyLinkTap,
+      reportLabel: reportLabel ?? this.reportLabel,
+      blockLabel: blockLabel ?? this.blockLabel,
+      copyLinkLabel: copyLinkLabel ?? this.copyLinkLabel,
       preloadRange: preloadRange ?? this.preloadRange,
       autoPlay: autoPlay ?? this.autoPlay,
       loop: loop ?? this.loop,

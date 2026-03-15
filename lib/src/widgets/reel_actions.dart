@@ -630,24 +630,24 @@ class _ReelActionsState extends State<ReelActions>
                 },
               ),
             ListTile(
-              leading: Icon(Icons.report),
-              title: Text('Report'),
+              leading: const Icon(Icons.report),
+              title: Text(widget.config.reportLabel),
               onTap: () {
                 Navigator.pop(context);
                 _handleReport(controller);
               },
             ),
             ListTile(
-              leading: Icon(Icons.block),
-              title: Text('Block user'),
+              leading: const Icon(Icons.block),
+              title: Text(widget.config.blockLabel),
               onTap: () {
                 Navigator.pop(context);
                 _handleBlock(controller);
               },
             ),
             ListTile(
-              leading: Icon(Icons.link),
-              title: Text('Copy link'),
+              leading: const Icon(Icons.link),
+              title: Text(widget.config.copyLinkLabel),
               onTap: () {
                 Navigator.pop(context);
                 _handleCopyLink(controller);
@@ -669,37 +669,42 @@ class _ReelActionsState extends State<ReelActions>
   }
 
   void _handleReport(ReelController controller) {
-    // Implement report functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Content reported'),
-        backgroundColor: widget.config.accentColor,
-      ),
-    );
+    if (widget.config.onReportTap != null) {
+      widget.config.onReportTap!(widget.reel);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Content reported'),
+          backgroundColor: widget.config.accentColor,
+        ),
+      );
+    }
   }
 
   void _handleBlock(ReelController controller) {
-    if (widget.reel.user?.id == null) return;
-
-    // Implement block functionality
-    controller.blockUser(widget.reel.user!.id);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('User blocked'),
-        backgroundColor: widget.config.accentColor,
-      ),
-    );
+    if (widget.config.onBlockTap != null) {
+      widget.config.onBlockTap!(widget.reel);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('User blocked'),
+          backgroundColor: widget.config.accentColor,
+        ),
+      );
+    }
     if (widget.onBlock != null) widget.onBlock!();
   }
 
   void _handleCopyLink(ReelController controller) {
-    // Implement copy link functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Link copied to clipboard'),
-        backgroundColor: widget.config.accentColor,
-      ),
-    );
+    if (widget.config.onCopyLinkTap != null) {
+      widget.config.onCopyLinkTap!(widget.reel);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Link copied to clipboard'),
+          backgroundColor: widget.config.accentColor,
+        ),
+      );
+    }
   }
 }
