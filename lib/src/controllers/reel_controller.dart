@@ -563,6 +563,12 @@ class ReelController extends GetxController {
     debugPrint('User followed');
   }
 
+  /// Append new reels without reinitializing the controller
+  void appendReels(List<ReelModel> newReels) {
+    _reels.addAll(newReels);
+    _reelsList.addAll(newReels);
+  }
+
   /// Clear error
   void clearError() {
     _error.value = null;
