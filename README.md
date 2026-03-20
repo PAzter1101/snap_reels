@@ -1,6 +1,8 @@
-# Flutter Awesome Reels
+# Snap Reels
 
 A powerful and feature-rich Flutter package for creating Instagram/TikTok-like video reels with advanced streaming support including HLS, DASH, and MP4 formats.
+
+> Fork of [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) by wailashraf71, maintained independently.
 
 ![Flutter Awesome Reels Preview](preview.png)
 
@@ -54,7 +56,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  flutter_awesome_reels: ^0.0.3
+  snap_reels: ^1.0.0
 ```
 
 Then run:
@@ -69,7 +71,7 @@ flutter pub get
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:flutter_awesome_reels/flutter_awesome_reels.dart';
+import 'package:snap_reels/snap_reels.dart';
 
 class MyReelsPage extends StatefulWidget {
   @override

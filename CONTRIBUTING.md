@@ -1,6 +1,6 @@
-# Contributing to Flutter Awesome Reels 🤝
+# Contributing to Snap Reels 🤝
 
-Thank you for your interest in contributing to Flutter Awesome Reels! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Snap Reels! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -16,8 +16,8 @@ Thank you for your interest in contributing to Flutter Awesome Reels! This docum
 1. **Fork the repository**
    ```bash
    # Click the "Fork" button on GitHub, then clone your fork
-   git clone https://github.com/your-username/flutter_awesome_reels.git
-   cd flutter_awesome_reels
+   git clone https://github.com/your-username/snap_reels.git
+   cd snap_reels
    ```
 
 2. **Install dependencies**
@@ -37,7 +37,7 @@ Thank you for your interest in contributing to Flutter Awesome Reels! This docum
 
 ### 🐛 Reporting Bugs
 
-Before creating bug reports, please check the [existing issues](https://github.com/wailashraf71/flutter_awesome_reels/issues) to avoid duplicates.
+Before creating bug reports, please check the [existing issues](https://github.com/PAzter1101/snap_reels/issues) to avoid duplicates.
 
 **When reporting bugs, please include:**
 - Flutter and Dart versions (`flutter --version`)
@@ -130,7 +130,7 @@ lib/
 │   ├── services/       # External services
 │   ├── utils/          # Utility functions
 │   └── widgets/        # UI components
-└── flutter_awesome_reels.dart  # Main export file
+└── snap_reels.dart  # Main export file
 ```
 
 ## 🎯 Areas for Contribution
@@ -210,8 +210,8 @@ We follow [Semantic Versioning](https://semver.org/):
 
 ## 🤔 Questions?
 
-- Check existing [Issues](https://github.com/wailashraf71/flutter_awesome_reels/issues)
-- Start a [Discussion](https://github.com/wailashraf71/flutter_awesome_reels/discussions)
+- Check existing [Issues](https://github.com/PAzter1101/snap_reels/issues)
+- Start a [Discussion](https://github.com/PAzter1101/snap_reels/discussions)
 - Contact maintainers
 
 ## 🎉 Recognition
@@ -221,4 +221,4 @@ Contributors will be:
 - Credited in release notes for significant contributions
 - Invited to join the maintainer team for consistent contributors
 
-Thank you for helping make Flutter Awesome Reels better! 🚀
+Thank you for helping make Snap Reels better! 🚀
