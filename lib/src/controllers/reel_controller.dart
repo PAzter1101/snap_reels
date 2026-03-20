@@ -240,16 +240,33 @@ class ReelController extends GetxController {
 
   /// Preload adjacent videos for smoother transitions
   Future<void> _preloadAdjacentVideos(int currentIndex) async {
+    // Dispose controllers that are far from current position
+    // to free hardware video decoder slots (most devices have 3-4)
+    final keysToRemove = <int>[];
+    for (final key in _preloadedControllers.keys) {
+      if ((key - currentIndex).abs() > 1) {
+        keysToRemove.add(key);
+      }
+    }
+    for (final key in keysToRemove) {
+      final controller = _preloadedControllers.remove(key);
+      _initializedVideoIndices.remove(key);
+      if (controller != null) {
+        try {
+          await controller.pause();
+          await controller.dispose();
+        } catch (_) {}
+      }
+    }
+
     // Preload next video if available
     if (currentIndex < _reels.length - 1) {
-      final nextIndex = currentIndex + 1;
-      _preloadVideo(nextIndex);
+      _preloadVideo(currentIndex + 1);
     }
 
     // Preload previous video if available
     if (currentIndex > 0) {
-      final prevIndex = currentIndex - 1;
-      _preloadVideo(prevIndex);
+      _preloadVideo(currentIndex - 1);
     }
   }
 
