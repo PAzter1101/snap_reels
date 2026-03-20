@@ -1,3 +1,22 @@
+## 1.0.0
+
+### Fork & Rename
+- Forked from [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) by wailashraf71
+- Published as `snap_reels` — maintained independently
+
+### New Features
+- `appendReels()` method on `ReelController` — append new reels without reinitializing the controller
+- `onReportTap`, `onBlockTap`, `onCopyLinkTap` callbacks in `ReelConfig` with customizable labels (`reportLabel`, `blockLabel`, `copyLinkLabel`)
+- `showCommentButton` parameter in `ReelConfig` — conditionally show/hide comment button
+
+### Bug Fixes
+- Fixed hardware video decoder exhaustion: dispose far-away preloaded `VideoPlayerController`s during scroll, keeping max 3 alive (previous, current, next)
+
+### Maintenance
+- Updated `share_plus` to ^12.0.0, `connectivity_plus` to ^7.0.0, `device_info_plus` to ^12.0.0, `wakelock_plus` to ^1.4.0
+- Replaced deprecated `activeColor` with `activeThumbColor` in example app
+- Fixed string interpolation in `ReelModel.toString()`
+
 ## 0.0.5
 
 ### 🎨 Example App Redesign
