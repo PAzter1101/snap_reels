@@ -1,3 +1,8 @@
+## 1.1.0
+
+### New Features
+- Thumbnail preview: show `thumbnailUrl` as background image while video loads, replacing black screen with a smooth visual transition
+
 ## 1.0.0
 
 ### Fork & Rename
