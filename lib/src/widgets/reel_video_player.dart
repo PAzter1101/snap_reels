@@ -83,17 +83,27 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     return VisibilityDetector(
       key: Key('reel_${widget.reel.id}'),
       onVisibilityChanged: _onVisibilityChanged,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Colors.black,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildVideoContent(),
-          ],
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildThumbnail(),
+          _buildVideoContent(),
+        ],
       ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    final url = widget.reel.thumbnailUrl;
+    if (url == null || url.isEmpty) {
+      return Container(color: Colors.black);
+    }
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, __, ___) => Container(color: Colors.black),
     );
   }
 
@@ -120,16 +130,16 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
           _isFirstLoad) {
         // Skip showing "loading" if we're just switching to an already initialized video
         if (isAlreadyInitialized) {
-          return Container(color: Colors.black);
+          return const SizedBox.expand();
         }
         return _buildLoadingWidget();
       }
 
       // If the controller exists but isn't initialized and we're not on first load,
-      // show a black screen instead of loading (for smooth transitions)
+      // show thumbnail instead of loading (for smooth transitions)
       if ((controller == null || !controller.value.isInitialized) &&
           !_isFirstLoad) {
-        return Container(color: Colors.black);
+        return const SizedBox.expand();
       }
 
       // Check for errors
@@ -164,8 +174,8 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
         );
       }
 
-      // Fallback - show black screen
-      return Container(color: Colors.black);
+      // Fallback - show thumbnail
+      return const SizedBox.expand();
     });
   }
 
@@ -173,22 +183,8 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     if (widget.loadingBuilder != null) {
       return widget.loadingBuilder!(context, widget.reel);
     }
-
-    return Container(
-      color: Colors.black,
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 16),
-            Text(
-              'Initializing...',
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-      ),
+    return const Center(
+      child: CircularProgressIndicator(color: Colors.white),
     );
   }
 
@@ -196,22 +192,8 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     if (widget.loadingBuilder != null) {
       return widget.loadingBuilder!(context, widget.reel);
     }
-
-    return Container(
-      color: Colors.black,
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 16),
-            Text(
-              'Loading video...',
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-      ),
+    return const Center(
+      child: CircularProgressIndicator(color: Colors.white),
     );
   }
 
