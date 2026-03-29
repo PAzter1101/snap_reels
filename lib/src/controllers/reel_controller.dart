@@ -390,6 +390,45 @@ class ReelController extends GetxController {
     );
   }
 
+  /// Animate a "peek" at the next reel without fully scrolling to it.
+  ///
+  /// Shows a preview of the next reel by partially dragging the current one,
+  /// then snapping back. Useful for onboarding hints.
+  ///
+  /// [peekOffset] — how far to drag in pixels (default 150).
+  /// [repeats] — how many times to repeat the peek (default 2).
+  /// [dragDuration] — duration of each drag animation (default 400ms).
+  /// [returnDuration] — duration of each return animation (default 300ms).
+  /// [pauseBetween] — pause between repeats (default 500ms).
+  Future<void> peekNext({
+    double peekOffset = 150,
+    int repeats = 2,
+    Duration dragDuration = const Duration(milliseconds: 400),
+    Duration returnDuration = const Duration(milliseconds: 300),
+    Duration pauseBetween = const Duration(milliseconds: 500),
+  }) async {
+    final pc = _pageController;
+    if (pc == null || !pc.hasClients) return;
+    if (_currentIndex.value >= _reels.length - 1) return;
+
+    for (int i = 0; i < repeats; i++) {
+      final baseOffset = pc.offset;
+      await pc.animateTo(
+        baseOffset + peekOffset,
+        duration: dragDuration,
+        curve: Curves.easeOut,
+      );
+      await pc.animateTo(
+        baseOffset,
+        duration: returnDuration,
+        curve: Curves.easeInOut,
+      );
+      if (i < repeats - 1) {
+        await Future.delayed(pauseBetween);
+      }
+    }
+  }
+
   /// Navigate to previous reel
   Future<void> previousPage() async {
     if (_pageController == null || _currentIndex.value <= 0) {

@@ -1,3 +1,8 @@
+## 1.2.0
+
+### New Features
+- `peekNext()` method on `ReelController` — animate a partial scroll to preview the next reel and snap back, useful for onboarding hints
+
 ## 1.1.0
 
 ### New Features
