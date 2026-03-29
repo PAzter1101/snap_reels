@@ -56,7 +56,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  snap_reels: ^1.0.0
+  snap_reels: ^1.2.0
 ```
 
 Then run:
