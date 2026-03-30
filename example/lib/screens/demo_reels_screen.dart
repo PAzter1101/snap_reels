@@ -75,7 +75,7 @@ class _DemoReelsScreenState extends State<DemoReelsScreen> {
               ? const Center(child: Text('Loading...'))
               : _reels.isEmpty
                   ? const Center(child: Text('No reels available'))
-                  : AwesomeReels(
+                  : SnapReels(
                       reels: _reels,
                       controller: _controller,
                       config: widget.config?.copyWith(

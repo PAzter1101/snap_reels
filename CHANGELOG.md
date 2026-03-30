@@ -1,3 +1,29 @@
+## 2.0.0
+
+### ⚠️ Breaking Changes
+- **`AwesomeReels` переименован в `SnapReels`** — главный виджет теперь называется `SnapReels`. Замените все вхождения `AwesomeReels(...)` на `SnapReels(...)` в вашем коде.
+
+### Deprecations
+- `StreamingConfig.enableAdaptiveBitrate` помечен `@Deprecated` — параметр не имел эффекта и будет удалён в v3.0.0. Просто уберите его из кода.
+
+### Performance
+- **SHA-256 cache keys**: хэш кэша теперь вычисляется через SHA-256 вместо `url.hashCode`. Устраняет коллизии и недетерминированность на web-платформе.
+- **URL normalization**: CDN-токены (`token`, `sig`, `expires`, `auth` и др.) вырезаются перед хэшированием — одно видео с разными токенами авторизации больше не дублируется в кэше.
+- **Memory pressure handling**: при системном сигнале нехватки памяти все preloaded контроллеры диспоузятся, memory-кэш очищается. Предотвращает OOM-kill на устройствах с 2–3 GB RAM.
+- **Adaptive preload**: на слабых устройствах (Android SDK < 28, iPhone < 11 поколения) preloadAhead автоматически снижается до 1, preloadBehind до 0 — экономия ~2 hw-декодеров.
+- **Preload prioritization**: `next` preload выполняется первым (`await`), `prev` — fire-and-forget, так как 80% скроллов идут вниз.
+- **Debounced preload**: при быстром скролле preload промежуточных страниц пропускается (debounce 200 мс) — нет лишних init/dispose циклов.
+- **Serial-based init cancellation**: каждый `onPageChanged` присваивает уникальный serial; если до конца инициализации страница сменилась снова — инициализация отменяется и контроллер диспоузится. Устраняет баг: после 4-5 быстрых свайпов видео не воспроизводилось, показывался только thumbnail.
+
+### Maintenance
+- Добавлена зависимость `crypto: ^3.0.6` для SHA-256.
+- Файл `reel_config.dart` декомпозирован: `CacheConfig`/`PreloadConfig` → `cache_config.dart`, `StreamingConfig` → `streaming_config.dart`, `VideoPlayerConfig` → `video_player_config.dart`, `ProgressIndicatorConfig` → `progress_config.dart`. Публичное API не изменилось.
+- `CacheItem` и `CacheStats` вынесены в `models/cache_item.dart`.
+- Добавлен `DeviceClassifier` (`utils/device_classifier.dart`) с классификацией устройств: `low / medium / high`.
+- User-Agent изменён с `AwesomeReels/1.0.0` на `SnapReels/1.3.0`.
+
+---
+
 ## 1.2.0
 
 ### New Features

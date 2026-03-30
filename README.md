@@ -4,35 +4,28 @@ A powerful and feature-rich Flutter package for creating Instagram/TikTok-like v
 
 > Fork of [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) by wailashraf71, maintained independently.
 
-![Flutter Awesome Reels Preview](preview.png)
-
-
-## ⚠️ Breaking Changes
-- **Multi-Format Video Support**: Now supports HLS, MPEG-DASH, and MP4 video sources. Update your video URLs and backend delivery as needed.
-- **New Event Callbacks**: Added `onPress` and `onLongPress` event callbacks for advanced interaction handling. Update your widget usage to handle these events if needed.
+![Snap Reels Preview](preview.png)
 
 ## Features
 
 ### 🎥 Video Streaming Support
-- **HLS (HTTP Live Streaming)** - Adaptive bitrate streaming with excellent iOS support
-- **DASH (Dynamic Adaptive Streaming)** - High-quality streaming with broad compatibility
-- **MP4** - Standard video format with universal support
-- **Auto-format selection** - Intelligent format selection based on platform and network conditions
-- **Fallback support** - Automatic fallback to alternative formats if primary format fails
+- **HLS (HTTP Live Streaming)** — adaptive streaming, excellent iOS support
+- **DASH (Dynamic Adaptive Streaming)** — high-quality streaming, broad compatibility
+- **MP4** — standard format with universal support
+- **Auto-format selection** — intelligent format selection based on platform and network conditions
+- **Fallback to MP4** — automatic fallback if primary format fails
 
 ### 📱 Platform Optimized
-- **iOS**: Optimized for HLS streaming
-- **Android**: Optimized for DASH streaming
-- **Web**: Universal MP4 support
-- **Hardware acceleration** support
-- **Picture-in-Picture** mode
+- **iOS**: optimized for HLS streaming
+- **Android**: optimized for DASH streaming
+- **Hardware acceleration** enabled by default
 
 ### ⚡ Performance Features
-- **Adaptive bitrate streaming** for optimal quality based on network conditions
-- **Intelligent caching** with configurable cache size and duration
-- **Video preloading** for smooth playback experience
-- **Memory management** with automatic controller cleanup
-- **Low latency streaming** support for live content
+- **Intelligent caching** with configurable cache size and duration, SHA-256 cache keys with CDN-token normalization
+- **Adaptive preload** — on low-end devices preload is automatically reduced to prevent OOM
+- **Memory pressure handling** — disposes preloaded controllers on system memory warning
+- **Fast scroll protection** — serial-based init cancellation prevents stale controller from overriding current video
+- **Preload prioritization** — next video preloads first (await), previous is fire-and-forget
 
 ### 🎨 UI/UX Features
 - **Instagram-like interface** with familiar gestures
@@ -45,8 +38,7 @@ A powerful and feature-rich Flutter package for creating Instagram/TikTok-like v
 
 ### 🔧 Advanced Configuration
 - **Streaming quality control** (bitrate limits, resolution)
-- **Subtitle and audio track selection**
-- **DRM support** for protected content
+- **DRM support** via custom HTTP headers
 - **Network timeout and retry configuration**
 - **Custom error and loading widgets**
 
@@ -56,7 +48,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  snap_reels: ^1.2.0
+  snap_reels: ^2.0.0
 ```
 
 Then run:
@@ -84,68 +76,21 @@ class _MyReelsPageState extends State<MyReelsPage> {
   @override
   void initState() {
     super.initState();
-    // Create reels with different streaming formats
     final reels = [
-      ReelModel(
-        id: '4',
-        videoSource: VideoSource(
-          url: 'https://bitmovin-a.akamaihd.net/content/MI201109210084_1/mpds/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.mpd',
-        ),
-        user: const ReelUser(
-          id: 'u2',
-          username: 'bob',
-          displayName: 'Bob Builder',
-          isFollowing: true,
-        ),
-        likesCount: 200,
-        commentsCount: 30,
-        sharesCount: 10,
-        tags: ['adventure', 'travel'],
-        audio: const ReelAudio(title: 'Adventure Tune'),
-        duration: const Duration(seconds: 20),
-        isLiked: true,
-        views: 2500,
-        location: 'Mountains',
-      ),
       ReelModel(
         id: '1',
         videoSource: VideoSource(
-          url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
-        ),
-        user: const ReelUser(
-          id: 'u3',
-          username: 'charlie',
-          displayName: 'Charlie Chaplin',
-        ),
-        likesCount: 4325,
-        commentsCount: 45,
-        sharesCount: 20,
-        tags: ['comedy', 'classic'],
-        audio: const ReelAudio(title: 'Classic Comedy'),
-        duration: const Duration(seconds: 15),
-        isLiked: false,
-        views: 5000,
-        location: 'Hollywood',
-      ),
-      ReelModel(
-        id: '3',
-        videoSource: VideoSource(
-          url: 'https://www.sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+          url: 'https://example.com/video.mp4',
         ),
         user: const ReelUser(
           id: 'u1',
           username: 'alice',
-          displayName: 'Alice in Wonderland',
+          displayName: 'Alice',
         ),
         likesCount: 120,
         commentsCount: 15,
         sharesCount: 5,
-        tags: ['fun', 'bunny'],
-        audio: const ReelAudio(title: 'Sample Music'),
-        duration: const Duration(seconds: 10),
-        isLiked: false,
-        views: 1000,
-        location: 'Wonderland',
+        duration: const Duration(seconds: 30),
       ),
     ];
     _controller = ReelController();
@@ -155,7 +100,7 @@ class _MyReelsPageState extends State<MyReelsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AwesomeReels(
+      body: SnapReels(
         reels: _controller.reels,
         controller: _controller,
         config: ReelConfig(
@@ -166,45 +111,29 @@ class _MyReelsPageState extends State<MyReelsPage> {
           debugPrint('Reel changed to index: $index');
         },
         onReelLiked: (reel) {
-          _showSnackBar(
-              '[${reel.isLiked ? 'Liked' : 'Unliked'} ${reel.user?.displayName}\'s reel');
+          debugPrint('${reel.isLiked ? 'Liked' : 'Unliked'} ${reel.user?.displayName}');
         },
         onReelShared: (reel) {
-          _showSnackBar('Shared ${reel.user?.displayName}\'s reel');
+          debugPrint('Shared ${reel.user?.displayName}');
         },
         onReelCommented: (reel) {
           // Show comment dialog or navigate to comments page
         },
         onUserFollowed: (user) {
-          _showSnackBar(
-              '${user.isFollowing ? 'Following' : 'Unfollowed'} ${user.displayName}');
-        },
-        onUserBlocked: (user) {
-          _showSnackBar('Blocked ${user.displayName}');
+          debugPrint('${user.isFollowing ? 'Following' : 'Unfollowed'} ${user.displayName}');
         },
         onVideoCompleted: (reel) {
           debugPrint('Video completed: ${reel.id}');
         },
         onVideoError: (reel, error) {
-          _showSnackBar('Error playing video: $error');
+          debugPrint('Error playing video: $error');
         },
-        // New event callbacks
         onPress: (reel) {
           debugPrint('Pressed: ${reel.id}');
         },
         onLongPress: (reel) {
           debugPrint('Long pressed: ${reel.id}');
         },
-      ),
-    );
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.grey[800],
       ),
     );
   }
@@ -220,11 +149,11 @@ class _MyReelsPageState extends State<MyReelsPage> {
 ### Advanced Streaming Configuration
 
 ```dart
-// Create a reel with multiple format support
+// Multi-format reel with fallback support
 final multiFormatReel = ReelModel(
   id: 'multi_1',
   videoSource: VideoSource(
-    format: VideoFormat.hls, // Primary format
+    format: VideoFormat.hls,
     urls: {
       VideoFormat.hls: 'https://example.com/video.m3u8',
       VideoFormat.dash: 'https://example.com/video.mpd',
@@ -232,8 +161,8 @@ final multiFormatReel = ReelModel(
     },
   ),
   thumbnailUrl: 'https://example.com/thumb.jpg',
-  duration: Duration(minutes: 3),
-  user: ReelUser(
+  duration: const Duration(minutes: 3),
+  user: const ReelUser(
     id: 'user1',
     username: 'creator',
     profilePictureUrl: 'https://example.com/avatar.jpg',
@@ -244,35 +173,30 @@ final multiFormatReel = ReelModel(
 // Advanced streaming configuration
 final streamingConfig = StreamingConfig(
   preferredFormat: PreferredStreamingFormat.hls,
-  enableAdaptiveBitrate: true,
   enableLowLatency: false,
   maxBitrate: 5000000, // 5 Mbps
   minBitrate: 500000,  // 500 Kbps
-  enableSubtitleSelection: true,
-  enableAudioTrackSelection: true,
-  enableQualitySelection: true,
-  enableFallback: true,
-  fallbackFormats: [VideoFormat.dash, VideoFormat.mp4],
-  networkTimeout: Duration(seconds: 30),
-  maxRetryAttempts: 3,
-  enableDRM: false,
+  fallbackToMp4: true,
+  networkTimeout: 30,    // seconds
+  retryAttempts: 3,
+  enableDrm: false,
 );
 
 final config = ReelConfig(
   enableCaching: true,
   cacheConfig: CacheConfig(
     maxCacheSize: 500 * 1024 * 1024, // 500MB
-    maxCacheAge: Duration(days: 7),
+    cacheDuration: Duration(days: 7),
   ),
   videoPlayerConfig: VideoPlayerConfig(
-    useBetterPlayer: true,
     enableHardwareAcceleration: true,
     enablePictureInPicture: true,
     streamingConfig: streamingConfig,
   ),
   preloadConfig: PreloadConfig(
-    preloadCount: 2,
-    preloadRadius: 1,
+    preloadAhead: 2,
+    preloadBehind: 1,
+    adaptivePreload: true, // reduce preload on low-end devices automatically
   ),
 );
 ```
@@ -281,9 +205,8 @@ final config = ReelConfig(
 
 ### HLS (HTTP Live Streaming)
 - **Best for**: iOS devices, adaptive streaming
-- **Features**: Automatic quality adjustment, low latency options
 - **File extension**: `.m3u8`
-- **Platform support**: Excellent on iOS, good on Android/Web
+- **Platform support**: excellent on iOS, good on Android/Web
 
 ```dart
 ReelModel.hls(
@@ -295,9 +218,8 @@ ReelModel.hls(
 
 ### DASH (Dynamic Adaptive Streaming)
 - **Best for**: Android devices, high-quality streaming
-- **Features**: Superior compression, wide codec support
 - **File extension**: `.mpd`
-- **Platform support**: Excellent on Android, good on Web
+- **Platform support**: excellent on Android, good on Web
 
 ```dart
 ReelModel.dash(
@@ -308,10 +230,9 @@ ReelModel.dash(
 ```
 
 ### MP4 (Standard Video)
-- **Best for**: Universal compatibility, simple implementation
-- **Features**: Wide support, easy to implement
+- **Best for**: universal compatibility
 - **File extension**: `.mp4`
-- **Platform support**: Universal
+- **Platform support**: universal
 
 ```dart
 ReelModel.mp4(
@@ -321,7 +242,7 @@ ReelModel.mp4(
 );
 ```
 
-## Configuration Options
+## Configuration Reference
 
 ### ReelConfig
 
@@ -329,6 +250,76 @@ ReelModel.mp4(
 |----------|------|---------|-------------|
 | `enableCaching` | `bool` | `true` | Enable video caching |
 | `cacheConfig` | `CacheConfig` | `CacheConfig()` | Cache configuration |
-| `preloadConfig` | `PreloadConfig` | `PreloadConfig()` | Video preloading settings |
+| `preloadConfig` | `PreloadConfig` | `PreloadConfig()` | Preloading settings |
 | `videoPlayerConfig` | `VideoPlayerConfig` | `VideoPlayerConfig()` | Video player configuration |
-| `progressIndicatorConfig`
+| `enablePullToRefresh` | `bool` | `false` | Pull-to-refresh on reel list |
+| `showDownloadButton` | `bool` | `false` | Show download button |
+
+### PreloadConfig
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `preloadAhead` | `int` | `2` | Videos to preload forward |
+| `preloadBehind` | `int` | `1` | Videos to keep preloaded behind |
+| `maxPreloaded` | `int` | `5` | Max simultaneous preloaded controllers |
+| `adaptivePreload` | `bool` | `true` | Auto-reduce on low-end devices |
+| `preloadOnWiFiOnly` | `bool` | `false` | Restrict preload to WiFi |
+
+### StreamingConfig
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `preferredFormat` | `PreferredStreamingFormat` | `auto` | Preferred format |
+| `enableLowLatency` | `bool` | `false` | Low latency HLS mode |
+| `maxBitrate` | `int?` | `null` | Max bitrate in bps |
+| `minBitrate` | `int?` | `null` | Min bitrate in bps |
+| `fallbackToMp4` | `bool` | `true` | Fallback to MP4 on error |
+| `networkTimeout` | `int` | `30` | Timeout in seconds |
+| `retryAttempts` | `int` | `3` | Retry count on failure |
+| `enableDrm` | `bool` | `false` | Enable DRM via headers |
+| `drmHeaders` | `Map<String,String>?` | `null` | Custom HTTP headers (for DRM/auth) |
+
+---
+
+## Migration Guide (1.x → 2.0.0)
+
+### 1. Переименование виджета
+
+Замените `AwesomeReels` на `SnapReels` во всех файлах:
+
+```dart
+// До (1.x)
+AwesomeReels(
+  reels: _controller.reels,
+  controller: _controller,
+  config: ReelConfig(),
+)
+
+// После (2.0.0)
+SnapReels(
+  reels: _controller.reels,
+  controller: _controller,
+  config: ReelConfig(),
+)
+```
+
+### 2. Удаление устаревшего параметра
+
+`enableAdaptiveBitrate` помечен как `@Deprecated` и не имеет эффекта. Просто удалите его:
+
+```dart
+// До (1.x)
+StreamingConfig(
+  preferredFormat: PreferredStreamingFormat.hls,
+  enableAdaptiveBitrate: true,   // <-- удалите эту строку
+)
+
+// После (2.0.0)
+StreamingConfig(
+  preferredFormat: PreferredStreamingFormat.hls,
+)
+```
+
+### 3. Ничего больше не нужно менять
+
+Все остальные API обратно совместимы. Публичные классы и методы (`ReelController`, `ReelModel`, `ReelConfig`, `VideoSource`, etc.) не изменились.

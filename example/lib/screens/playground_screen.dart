@@ -333,7 +333,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
     // Use only the first reel for mini preview
     final miniReels = SampleData.basicReels.take(1).toList();
 
-    return AwesomeReels(
+    return SnapReels(
       reels: miniReels,
       config: config,
       onReelChanged: (index) {},

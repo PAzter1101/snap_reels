@@ -7,8 +7,8 @@ import 'models/reel_model.dart';
 import 'widgets/reel_overlay.dart';
 import 'widgets/reel_video_player.dart';
 
-/// The main AwesomeReels widget for displaying vertical video reels
-class AwesomeReels extends StatefulWidget {
+/// The main SnapReels widget for displaying vertical video reels
+class SnapReels extends StatefulWidget {
   /// List of reel models to display
   final List<ReelModel> reels;
 
@@ -64,7 +64,7 @@ class AwesomeReels extends StatefulWidget {
   final void Function(ReelModel reel)? onVideoCompleted;
   final void Function(ReelModel reel, Object error)? onVideoError;
 
-  const AwesomeReels({
+  const SnapReels({
     super.key,
     required this.reels,
     this.config = const ReelConfig(),
@@ -92,10 +92,10 @@ class AwesomeReels extends StatefulWidget {
   });
 
   @override
-  State<AwesomeReels> createState() => _AwesomeReelsState();
+  State<SnapReels> createState() => _SnapReelsState();
 }
 
-class _AwesomeReelsState extends State<AwesomeReels>
+class _SnapReelsState extends State<SnapReels>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   late ReelController _controller;
   bool _isExternalController = false;
@@ -137,7 +137,13 @@ class _AwesomeReelsState extends State<AwesomeReels>
   }
 
   @override
-  void didUpdateWidget(AwesomeReels oldWidget) {
+  void didHaveMemoryPressure() {
+    super.didHaveMemoryPressure();
+    _controller.handleMemoryPressure();
+  }
+
+  @override
+  void didUpdateWidget(SnapReels oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     // Reinitialize if reels or config changed
@@ -154,7 +160,7 @@ class _AwesomeReelsState extends State<AwesomeReels>
         initialIndex: widget.initialIndex,
       );
     } catch (e) {
-      debugPrint('Error initializing AwesomeReels: $e');
+      debugPrint('Error initializing SnapReels: $e');
     }
   }
 
@@ -248,10 +254,10 @@ class _AwesomeReelsState extends State<AwesomeReels>
   }
 }
 
-/// Extension methods for AwesomeReels
-extension AwesomeReelsExtension on AwesomeReels {
-  /// Create AwesomeReels from video URLs
-  static AwesomeReels fromUrls(
+/// Extension methods for SnapReels
+extension SnapReelsExtension on SnapReels {
+  /// Create SnapReels from video URLs
+  static SnapReels fromUrls(
     List<String> videoUrls, {
     ReelConfig config = const ReelConfig(),
     int initialIndex = 0,
@@ -265,7 +271,7 @@ extension AwesomeReelsExtension on AwesomeReels {
       );
     }).toList();
 
-    return AwesomeReels(
+    return SnapReels(
       reels: reels,
       config: config,
       initialIndex: initialIndex,

@@ -2,26 +2,20 @@
 
 Планы по оптимизации и развитию snap_reels.
 
-## Оптимизация производительности
+## Выполнено (v1.3.0)
 
-### Memory pressure handling
-Слушать `didHaveMemoryPressure()` из `WidgetsBindingObserver` и при нехватке памяти агрессивно чистить кэш и диспозить preloaded контроллеры. Сейчас нет никакой реакции на давление памяти — на устройствах с 2-3GB RAM возможен OOM.
+- **Нормализация cache key** — SHA-256 вместо `hashCode`, CDN-токены убираются перед хэшированием
+- **Deprecate `enableAdaptiveBitrate`** — помечен `@Deprecated`, noop-код удалён
+- **Приоритизация preload** — next видео грузится первым (await), prev — в фоне
+- **Memory pressure handling** — `didHaveMemoryPressure()` диспозит preloaded контроллеры и чистит memory-кэш
+- **Адаптивный preload** — `DeviceClassifier` определяет класс устройства, на слабых снижает preloadAhead до 1
+- **Декомпозиция reel_config.dart** — 682 строки разбиты на 5 файлов (cache_config, progress_config, streaming_config, video_player_config)
+- **Вынос cache_item.dart** — `CacheItem` и `CacheStats` в отдельном файле
 
-### Адаптивный preload под слабые устройства
-Сейчас `preloadAhead: 2` по дефолту — это 3 активных видео-декодера одновременно. Бюджетные устройства имеют 3-4 слота hardware decoder. Определять класс устройства (RAM, CPU) и автоматически снижать `preloadAhead` до 1 и `preloadBehind` до 0 на слабых.
+## В работе
 
-### Пул видео-контроллеров вместо create/dispose
-Быстрый скролл создаёт и уничтожает `VideoPlayerController` на каждое переключение — GC-паузы заметны на слабых устройствах. Вместо dispose переиспользовать контроллеры, меняя source.
+### Декомпозиция reel_controller.dart
+747 строк. Планируется разбить на controller + video_lifecycle_mixin + preload_manager + playback_mixin. Требует осторожного mixin-рефакторинга из-за общего состояния.
 
-### Приоритизация инициализации контроллеров
-`_createVideoController()` делает `await controller.initialize()` последовательно. Приоритизировать: сначала next, потом prev. Показывать thumbnail пока контроллер инициализируется.
-
-## Кэширование
-
-### Нормализация cache key
-URL хэшируется через `.hashCode` — возможны коллизии, а URL с разными query-параметрами (CDN tokens) создают дублирующие записи в кэше. Перейти на SHA-256 и нормализовать URL (убирать token params) перед хэшированием.
-
-## Очистка API
-
-### Убрать или реализовать `enableAdaptiveBitrate`
-В `StreamingConfig` есть флаг `enableAdaptiveBitrate: true`, но реализации нет — всегда грузится один и тот же URL. Либо убрать параметр из API, либо добавить поддержку нескольких качеств через `VideoSource`.
+### Пул видео-контроллеров
+`VideoPlayerController` не поддерживает смену source — полноценный пул невозможен. Исследовать альтернативные подходы к минимизации GC-давления при быстром скролле.

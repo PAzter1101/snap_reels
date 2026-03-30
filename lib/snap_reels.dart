@@ -1,5 +1,5 @@
 // Core exports
-export 'src/awesome_reels.dart';
+export 'src/snap_reels_widget.dart';
 export 'src/models/reel_model.dart'
     show ReelModel, ReelUser, ReelAudio, VideoSource, VideoFormat;
 export 'src/models/reel_config.dart';

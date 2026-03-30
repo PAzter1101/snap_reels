@@ -3,8 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import '../models/cache_item.dart';
 import '../models/reel_config.dart';
+import '../utils/url_utils.dart' as url_utils;
 import 'package:video_player/video_player.dart';
+
+export '../models/cache_item.dart';
 
 /// Advanced cache manager for video files and thumbnails
 class CacheManager {
@@ -99,7 +103,7 @@ class CacheManager {
         cancelToken: cancelToken,
         options: Options(
           headers: {
-            'User-Agent': 'AwesomeReels/1.0.0',
+            'User-Agent': 'SnapReels/1.3.0',
           },
         ),
       );
@@ -210,10 +214,9 @@ class CacheManager {
     }
   }
 
-  /// Generate cache key from URL
+  /// Generate cache key from URL (SHA-256, CDN-tokens normalized)
   String _generateCacheKey(String url) {
-    // Simple hash function as replacement for md5
-    return url.hashCode.abs().toString();
+    return url_utils.generateCacheKey(url);
   }
 
   /// Generate filename from URL
@@ -221,7 +224,9 @@ class CacheManager {
     final uri = Uri.parse(url);
     final extension = uri.path.split('.').last;
     final cacheKey = _generateCacheKey(url);
-    return '$cacheKey.$extension';
+    // SHA-256 hex — 64 символа, берём первые 16 для краткости имени файла
+    final shortKey = cacheKey.substring(0, 16);
+    return '$shortKey.$extension';
   }
 
   /// Load cache index from storage
@@ -323,6 +328,19 @@ class CacheManager {
       debugPrint(
           'Removed ${itemsToRemove.length} cache items to enforce size limit');
     }
+  }
+
+  /// Clear in-memory caches (called on memory pressure).
+  /// Does NOT delete files on disk — only frees RAM.
+  void clearMemoryCache() {
+    _memoryFileCache.clear();
+    for (final controller in _videoControllers.values) {
+      try {
+        controller?.dispose();
+      } catch (_) {}
+    }
+    _videoControllers.clear();
+    _controllerAccessTimes.clear();
   }
 
   /// Cancel all ongoing downloads
@@ -429,86 +447,3 @@ class CacheManager {
   }
 }
 
-/// Cache item data model
-class CacheItem {
-  final String cacheKey;
-  final String filePath;
-  final String url;
-  final DateTime createdAt;
-  final int fileSize;
-  DateTime lastAccessTime; // Made non-final to allow updates
-  final DateTime expiryTime;
-
-  CacheItem({
-    required this.cacheKey,
-    required this.filePath,
-    required this.url,
-    required this.createdAt,
-    required this.fileSize,
-    required this.lastAccessTime,
-    required this.expiryTime,
-  });
-
-  bool get isExpired => DateTime.now().isAfter(expiryTime);
-
-  Map<String, dynamic> toJson() => {
-        'cacheKey': cacheKey,
-        'filePath': filePath,
-        'url': url,
-        'createdAt': createdAt.toIso8601String(),
-        'fileSize': fileSize,
-        'lastAccessTime': lastAccessTime.toIso8601String(),
-        'expiryTime': expiryTime.toIso8601String(),
-      };
-
-  factory CacheItem.fromJson(Map<String, dynamic> json) => CacheItem(
-        cacheKey: json['cacheKey'] as String,
-        filePath: json['filePath'] as String,
-        url: json['url'] as String,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        fileSize: json['fileSize'] as int,
-        lastAccessTime: DateTime.parse(json['lastAccessTime'] as String),
-        expiryTime: DateTime.parse(json['expiryTime'] as String),
-      );
-}
-
-/// Cache statistics
-class CacheStats {
-  final int totalFiles;
-  final int totalSize;
-  final int expiredFiles;
-  final String cacheDirectory;
-
-  const CacheStats({
-    required this.totalFiles,
-    required this.totalSize,
-    required this.expiredFiles,
-    required this.cacheDirectory,
-  });
-
-  factory CacheStats.empty() {
-    return const CacheStats(
-      totalFiles: 0,
-      totalSize: 0,
-      expiredFiles: 0,
-      cacheDirectory: '',
-    );
-  }
-
-  /// Get human readable size
-  String get humanReadableSize {
-    if (totalSize < 1024) return '${totalSize}B';
-    if (totalSize < 1024 * 1024) {
-      return '${(totalSize / 1024).toStringAsFixed(1)}KB';
-    }
-    if (totalSize < 1024 * 1024 * 1024) {
-      return '${(totalSize / (1024 * 1024)).toStringAsFixed(1)}MB';
-    }
-    return '${(totalSize / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
-  }
-
-  @override
-  String toString() {
-    return 'CacheStats(files: $totalFiles, size: $humanReadableSize, expired: $expiredFiles)';
-  }
-}

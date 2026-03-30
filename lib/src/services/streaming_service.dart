@@ -76,10 +76,6 @@ class StreamingService {
     await controller.initialize();
     await controller.setLooping(reel.shouldLoop);
     await controller.setVolume(config.initialVolume);
-
-    if (config.enableAdaptiveBitrate) {
-      await controller.setPlaybackSpeed(1.0);
-    }
   }
 
   Future<VideoFormat> _determineOptimalFormat(

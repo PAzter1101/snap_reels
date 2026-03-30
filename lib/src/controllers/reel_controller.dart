@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart' hide VideoFormat;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/reel_model.dart';
 import '../models/reel_config.dart';
+import '../services/cache_manager.dart';
+import '../utils/device_classifier.dart';
 
 /// Simplified controller to prevent codec overload crashes
 class ReelController extends GetxController {
@@ -21,6 +25,9 @@ class ReelController extends GetxController {
   // Track initialization state
   final RxBool _isVideoInitializing = false.obs;
   final Map<int, bool> _initializedVideoIndices = {};
+  PreloadConfig? _effectivePreloadConfig;
+  Timer? _preloadDebounce;
+  int _initSerial = 0;
 
   final RxInt _currentIndex = 0.obs;
   final RxBool _isInitialized = false.obs;
@@ -143,6 +150,18 @@ class ReelController extends GetxController {
       // Initialize page controller
       _pageController = PageController(initialPage: _currentIndex.value);
 
+      // Adjust preload strategy for weak devices
+      if (_config.preloadConfig.adaptivePreload) {
+        final deviceClass = await DeviceClassifier.classify();
+        _effectivePreloadConfig = DeviceClassifier.adjustPreload(
+          _config.preloadConfig,
+          deviceClass,
+        );
+        debugPrint('Device class: $deviceClass, preloadAhead: ${_effectivePreloadConfig!.preloadAhead}');
+      } else {
+        _effectivePreloadConfig = _config.preloadConfig;
+      }
+
       // Initialize current video
       await _initializeCurrentVideo();
 
@@ -161,8 +180,12 @@ class ReelController extends GetxController {
     }
   }
 
-  /// Initialize current video
-  Future<void> _initializeCurrentVideo() async {
+  /// Initialize current video.
+  ///
+  /// [serial] — номер вызова из onPageChanged. Если за время await
+  /// пришёл новый вызов (_initSerial != serial), инициализация отменяется.
+  Future<void> _initializeCurrentVideo([int? serial]) async {
+    final expectedSerial = serial ?? _initSerial;
     final currentReel = _currentReel.value;
     if (currentReel == null) return;
 
@@ -172,17 +195,15 @@ class ReelController extends GetxController {
     if (_preloadedControllers.containsKey(currentIndex) &&
         _preloadedControllers[currentIndex] != null &&
         _preloadedControllers[currentIndex]!.value.isInitialized) {
-      // Use the preloaded controller
       debugPrint('Using preloaded controller for index $currentIndex');
 
-      // Pause and detach previous active controller before switching
       if (_currentVideoController != null &&
           _currentVideoIndex != currentIndex) {
         try {
           await _currentVideoController!.pause();
         } catch (_) {}
+        if (_initSerial != expectedSerial) return; // отменён новым вызовом
         _currentVideoController!.removeListener(_onVideoControllerUpdate);
-        // Save current controller to preloaded cache before replacing
         if (_currentVideoIndex >= 0 && _currentVideoIndex < _reels.length) {
           _preloadedControllers[_currentVideoIndex] = _currentVideoController;
         } else {
@@ -190,12 +211,11 @@ class ReelController extends GetxController {
         }
       }
 
-      // Activate the preloaded controller
+      if (_initSerial != expectedSerial) return;
+
       _currentVideoController = _preloadedControllers[currentIndex];
       _currentVideoIndex = currentIndex;
       _initializedVideoIndices[currentIndex] = true;
-
-      // Remove from preloaded since it's now active
       _preloadedControllers.remove(currentIndex);
 
       await _startPlayback(currentReel);
@@ -206,12 +226,13 @@ class ReelController extends GetxController {
       _isVideoInitializing.value = true;
       _error.value = null;
 
-      // Pause and save current controller to preloaded cache before replacing
+      // Pause and save current controller before replacing
       if (_currentVideoController != null &&
           _currentVideoIndex != currentIndex) {
         try {
           await _currentVideoController!.pause();
         } catch (_) {}
+        if (_initSerial != expectedSerial) return; // отменён новым вызовом
         _currentVideoController!.removeListener(_onVideoControllerUpdate);
         if (_currentVideoIndex >= 0 && _currentVideoIndex < _reels.length) {
           _preloadedControllers[_currentVideoIndex] = _currentVideoController;
@@ -221,8 +242,13 @@ class ReelController extends GetxController {
         }
       }
 
-      // Create new controller
       final controller = await _createVideoController(currentReel);
+      if (_initSerial != expectedSerial) {
+        // Пришёл новый onPageChanged пока грузились — dispose и выход
+        controller?.dispose();
+        return;
+      }
+
       if (controller != null) {
         _currentVideoController = controller;
         _currentVideoIndex = currentIndex;
@@ -240,6 +266,8 @@ class ReelController extends GetxController {
 
   /// Preload adjacent videos for smoother transitions
   Future<void> _preloadAdjacentVideos(int currentIndex) async {
+    final preload = _effectivePreloadConfig ?? _config.preloadConfig;
+
     // Dispose controllers that are far from current position
     // to free hardware video decoder slots (most devices have 3-4)
     final keysToRemove = <int>[];
@@ -259,15 +287,33 @@ class ReelController extends GetxController {
       }
     }
 
-    // Preload next video if available
-    if (currentIndex < _reels.length - 1) {
-      _preloadVideo(currentIndex + 1);
+    // Preload next video first (users scroll down ~80% of the time)
+    if (preload.preloadAhead > 0 && currentIndex < _reels.length - 1) {
+      await _preloadVideo(currentIndex + 1);
     }
 
-    // Preload previous video if available
-    if (currentIndex > 0) {
+    // Preload previous video in background (lower priority)
+    if (preload.preloadBehind > 0 && currentIndex > 0) {
       _preloadVideo(currentIndex - 1);
     }
+  }
+
+  /// Handle system memory pressure — dispose preloaded controllers,
+  /// keep only the currently playing video alive.
+  void handleMemoryPressure() {
+    debugPrint('snap_reels: memory pressure — disposing preloaded controllers');
+    for (final entry in _preloadedControllers.entries.toList()) {
+      final controller = entry.value;
+      _preloadedControllers.remove(entry.key);
+      _initializedVideoIndices.remove(entry.key);
+      if (controller != null) {
+        try {
+          controller.pause();
+          controller.dispose();
+        } catch (_) {}
+      }
+    }
+    CacheManager.instance.clearMemoryCache();
   }
 
   /// Dispose all controllers (active and preloaded)
@@ -455,11 +501,17 @@ class ReelController extends GetxController {
     _currentIndex.value = index;
     _currentReel.value = _reels[index];
 
-    // Switch to the new video immediately - either preloaded or initialize new
-    await _initializeCurrentVideo();
+    // Increment serial so any in-flight init for a previous index self-cancels
+    final serial = ++_initSerial;
 
-    // Preload adjacent videos for smooth future transitions
-    _preloadAdjacentVideos(index);
+    // Switch to the new video immediately - either preloaded or initialize new
+    await _initializeCurrentVideo(serial);
+
+    // Debounce preload: during fast scroll, skip intermediate preloads
+    _preloadDebounce?.cancel();
+    _preloadDebounce = Timer(const Duration(milliseconds: 200), () {
+      _preloadAdjacentVideos(index);
+    });
   }
 
   /// Preload a video at a specific index without making it active
@@ -693,6 +745,7 @@ class ReelController extends GetxController {
     if (_isDisposed.value) return;
 
     _isDisposed.value = true;
+    _preloadDebounce?.cancel();
     _updateAccumulatedPlayTime();
 
     // Dispose all controllers
