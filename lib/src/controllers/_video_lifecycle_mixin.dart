@@ -8,7 +8,7 @@ part of 'reel_controller.dart';
 mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
   /// Create the fixed pool of 3 Player + VideoController pairs.
   void _initializePool() {
-    for (int i = 0; i < _kPoolSize; i++) {
+    for (int i = 0; i < _poolSize; i++) {
       final player = Player();
       _players.add(player);
       _slotSubscriptions.add(_subscribeSlot(i));
@@ -140,14 +140,14 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
   /// Find the pool slot farthest from [targetIndex], or an empty one.
   int _getRecyclableSlot(int targetIndex) {
     // Prefer an unassigned slot.
-    for (int i = 0; i < _kPoolSize; i++) {
+    for (int i = 0; i < _poolSize; i++) {
       if (!_slotToReel.containsKey(i)) return i;
     }
 
     // All slots assigned — recycle the farthest from target.
     int farthestSlot = 0;
     int maxDistance = -1;
-    for (int i = 0; i < _kPoolSize; i++) {
+    for (int i = 0; i < _poolSize; i++) {
       final dist = (_slotToReel[i]! - targetIndex).abs();
       if (dist > maxDistance) {
         maxDistance = dist;

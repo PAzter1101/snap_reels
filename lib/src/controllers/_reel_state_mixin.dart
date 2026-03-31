@@ -1,6 +1,7 @@
 part of 'reel_controller.dart';
 
-const int _kPoolSize = 3;
+/// Default pool size; overridden by [DeviceClassifier] for high-end devices.
+const int _kDefaultPoolSize = 3;
 
 /// Shared reactive state and public getters for [ReelController].
 mixin _ReelStateMixin on GetxController {
@@ -9,6 +10,7 @@ mixin _ReelStateMixin on GetxController {
   PageController? _pageController;
 
   final RxList<ReelModel> _reelsList = <ReelModel>[].obs;
+  int _poolSize = _kDefaultPoolSize;
   final List<Player> _players = [];
   final List<List<StreamSubscription>> _slotSubscriptions = [];
 

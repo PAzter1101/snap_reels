@@ -63,6 +63,24 @@ class ReelController extends GetxController
 
       _initializedVideoIndices.clear();
 
+      // Determine device class and pool size before creating the pool.
+      if (_config.preloadConfig.adaptivePreload) {
+        final deviceClass = await DeviceClassifier.classify();
+        _poolSize = DeviceClassifier.recommendedPoolSize(deviceClass);
+        _effectivePreloadConfig = DeviceClassifier.adjustPreload(
+          _config.preloadConfig,
+          deviceClass,
+        );
+        debugPrint(
+          'Device class: $deviceClass, '
+          'poolSize: $_poolSize, '
+          'preloadAhead: ${_effectivePreloadConfig!.preloadAhead}',
+        );
+      } else {
+        _poolSize = _kDefaultPoolSize;
+        _effectivePreloadConfig = _config.preloadConfig;
+      }
+
       // Create the pool once; on re-init just reset slot assignments.
       if (_players.isEmpty) {
         _initializePool();
@@ -71,20 +89,6 @@ class ReelController extends GetxController
       }
 
       _pageController = PageController(initialPage: _currentIndex.value);
-
-      if (_config.preloadConfig.adaptivePreload) {
-        final deviceClass = await DeviceClassifier.classify();
-        _effectivePreloadConfig = DeviceClassifier.adjustPreload(
-          _config.preloadConfig,
-          deviceClass,
-        );
-        debugPrint(
-          'Device class: $deviceClass, '
-          'preloadAhead: ${_effectivePreloadConfig!.preloadAhead}',
-        );
-      } else {
-        _effectivePreloadConfig = _config.preloadConfig;
-      }
 
       await _initializeCurrentVideo();
       _preloadAdjacentVideos(_currentIndex.value);
