@@ -141,6 +141,10 @@ class ReelConfig {
   final Function(Duration)? onSeek;
   final double progressBarPadding;
 
+  /// Отступ снизу для всего контента overlay (user info, actions, progress bar).
+  /// Используйте для поднятия контента над tab bar или другими элементами UI.
+  final double contentBottomPadding;
+
   const ReelConfig({
     this.backgroundColor = Colors.black,
     this.showProgressIndicator = true,
@@ -197,6 +201,7 @@ class ReelConfig {
     this.onPause,
     this.onSeek,
     this.progressBarPadding = 20.0,
+    this.contentBottomPadding = 0.0,
   });
 
   ReelConfig copyWith({
@@ -255,6 +260,7 @@ class ReelConfig {
     VoidCallback? onPause,
     Function(Duration)? onSeek,
     double? progressBarPadding,
+    double? contentBottomPadding,
   }) {
     return ReelConfig(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -316,6 +322,7 @@ class ReelConfig {
       onPause: onPause ?? this.onPause,
       onSeek: onSeek ?? this.onSeek,
       progressBarPadding: progressBarPadding ?? this.progressBarPadding,
+      contentBottomPadding: contentBottomPadding ?? this.contentBottomPadding,
     );
   }
 }

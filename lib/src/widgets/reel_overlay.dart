@@ -138,7 +138,8 @@ class _ReelOverlayState extends State<ReelOverlay>
             child: Stack(children: [
               // Main content area
               Positioned(
-                bottom: 80,
+                bottom: (widget.config.showProgressIndicator ? 80 : 16) +
+                    widget.config.contentBottomPadding,
                 left: 16,
                 right: 80,
                 child: _buildUserInfo(context),
@@ -146,7 +147,8 @@ class _ReelOverlayState extends State<ReelOverlay>
 
               // Actions on the right
               Positioned(
-                bottom: 80,
+                bottom: (widget.config.showProgressIndicator ? 80 : 16) +
+                    widget.config.contentBottomPadding,
                 right: 12,
                 child: ReelActions(
                   reel: widget.reel,
@@ -238,22 +240,23 @@ class _ReelOverlayState extends State<ReelOverlay>
                   : const SizedBox.shrink()),
 
               // Progress indicator at bottom
-              Positioned(
-                bottom: 30,
-                left: widget.config.progressBarPadding,
-                right: widget.config.progressBarPadding,
-                child: ReelProgressIndicator(
-                  reel: widget.reel,
-                  config: widget.config,
-                  showThumb: true,
-                  showThumbnail: true,
-                  onSeek: (position) {
-                    if (widget.config.onSeek != null) {
-                      widget.config.onSeek!(position);
-                    }
-                  },
+              if (widget.config.showProgressIndicator)
+                Positioned(
+                  bottom: 30 + widget.config.contentBottomPadding,
+                  left: widget.config.progressBarPadding,
+                  right: widget.config.progressBarPadding,
+                  child: ReelProgressIndicator(
+                    reel: widget.reel,
+                    config: widget.config,
+                    showThumb: true,
+                    showThumbnail: true,
+                    onSeek: (position) {
+                      if (widget.config.onSeek != null) {
+                        widget.config.onSeek!(position);
+                      }
+                    },
+                  ),
                 ),
-              ),
             ]),
           ),
         ));
