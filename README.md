@@ -1,65 +1,47 @@
 # Snap Reels
 
-A powerful and feature-rich Flutter package for creating Instagram/TikTok-like video reels with advanced streaming support including HLS, DASH, and MP4 formats.
+Flutter-пакет для создания вертикальных видеолент в стиле Instagram Reels / TikTok с продвинутой поддержкой стриминга (HLS, DASH, MP4).
 
-> Fork of [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) by wailashraf71, maintained independently.
+> Fork [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) от wailashraf71, развивается независимо.
 
-![Snap Reels Preview](preview.png)
+## Возможности
 
-## Features
+### Видео-стриминг
+- **HLS** — адаптивный стриминг, оптимален для iOS
+- **DASH** — высококачественный стриминг, оптимален для Android
+- **MP4** — универсальный формат
+- **Автовыбор формата** — по платформе и состоянию сети
+- **DRM** — кастомные HTTP-заголовки для авторизации
 
-### 🎥 Video Streaming Support
-- **HLS (HTTP Live Streaming)** — adaptive streaming, excellent iOS support
-- **DASH (Dynamic Adaptive Streaming)** — high-quality streaming, broad compatibility
-- **MP4** — standard format with universal support
-- **Auto-format selection** — intelligent format selection based on platform and network conditions
-- **Fallback to MP4** — automatic fallback if primary format fails
+### Производительность
+- **Player Pool** — фиксированный пул из 3 `Player`'ов (media_kit). При свайпе декодер переиспользуется через `player.open()`, без create/dispose цикла
+- **Адаптивный preload** — на слабых устройствах preload автоматически снижается
+- **Memory pressure** — при нехватке памяти неактивные Player'ы останавливаются
+- **SHA-256 кеш** — нормализация CDN-токенов, без дублей в кеше
+- **Debounced preload** — при быстром скролле промежуточные preload'ы пропускаются
 
-### 📱 Platform Optimized
-- **iOS**: optimized for HLS streaming
-- **Android**: optimized for DASH streaming
-- **Hardware acceleration** enabled by default
+### UI/UX
+- Интерфейс в стиле Instagram с привычными жестами
+- Настраиваемый progress indicator с drag-to-seek и превью
+- Shimmer-эффект при загрузке
+- Play/pause анимация, double-tap лайк, long press пауза
+- Кастомные виджеты ошибок и загрузки
 
-### ⚡ Performance Features
-- **Intelligent caching** with configurable cache size and duration, SHA-256 cache keys with CDN-token normalization
-- **Adaptive preload** — on low-end devices preload is automatically reduced to prevent OOM
-- **Memory pressure handling** — disposes preloaded controllers on system memory warning
-- **Fast scroll protection** — serial-based init cancellation prevents stale controller from overriding current video
-- **Preload prioritization** — next video preloads first (await), previous is fire-and-forget
-
-### 🎨 UI/UX Features
-- **Instagram-like interface** with familiar gestures
-- **Customizable progress indicators**
-- **Shimmer loading effects**
-- **Error handling** with retry functionality
-- **Play/pause animations**
-- **Double-tap to like** with heart animation
-- **Long press to pause**
-
-### 🔧 Advanced Configuration
-- **Streaming quality control** (bitrate limits, resolution)
-- **DRM support** via custom HTTP headers
-- **Network timeout and retry configuration**
-- **Custom error and loading widgets**
-
-## Installation
-
-Add this to your package's `pubspec.yaml` file:
+## Установка
 
 ```yaml
 dependencies:
-  snap_reels: ^2.0.0
+  snap_reels: ^2.1.0
 ```
 
-Then run:
+### Требования
+- Flutter ≥ 3.0
+- Android 5.0+ (реальное устройство)
+- iOS 12+
 
-```bash
-flutter pub get
-```
+> **⚠️ Android-эмулятор не поддерживается** — media_kit использует hardware-декодеры через libmpv, которые не работают на эмуляторе. Тестируйте на реальном устройстве (USB или [wireless debugging](https://developer.android.com/studio/run/device#wireless)).
 
-## Quick Start
-
-### Basic Usage
+## Быстрый старт
 
 ```dart
 import 'package:flutter/material.dart';
@@ -67,7 +49,7 @@ import 'package:snap_reels/snap_reels.dart';
 
 class MyReelsPage extends StatefulWidget {
   @override
-  _MyReelsPageState createState() => _MyReelsPageState();
+  State<MyReelsPage> createState() => _MyReelsPageState();
 }
 
 class _MyReelsPageState extends State<MyReelsPage> {
@@ -76,25 +58,21 @@ class _MyReelsPageState extends State<MyReelsPage> {
   @override
   void initState() {
     super.initState();
-    final reels = [
-      ReelModel(
-        id: '1',
-        videoSource: VideoSource(
-          url: 'https://example.com/video.mp4',
-        ),
-        user: const ReelUser(
-          id: 'u1',
-          username: 'alice',
-          displayName: 'Alice',
-        ),
-        likesCount: 120,
-        commentsCount: 15,
-        sharesCount: 5,
-        duration: const Duration(seconds: 30),
-      ),
-    ];
     _controller = ReelController();
-    _controller.initialize(reels: reels, config: ReelConfig());
+    _controller.initialize(
+      reels: [
+        ReelModel(
+          id: '1',
+          videoSource: VideoSource(url: 'https://example.com/video.mp4'),
+          user: const ReelUser(id: 'u1', username: 'alice'),
+          likesCount: 120,
+          commentsCount: 15,
+          sharesCount: 5,
+          duration: const Duration(seconds: 30),
+        ),
+      ],
+      config: const ReelConfig(),
+    );
   }
 
   @override
@@ -103,37 +81,10 @@ class _MyReelsPageState extends State<MyReelsPage> {
       body: SnapReels(
         reels: _controller.reels,
         controller: _controller,
-        config: ReelConfig(
-          showDownloadButton: false,
-          enablePullToRefresh: true,
-        ),
-        onReelChanged: (index) {
-          debugPrint('Reel changed to index: $index');
-        },
-        onReelLiked: (reel) {
-          debugPrint('${reel.isLiked ? 'Liked' : 'Unliked'} ${reel.user?.displayName}');
-        },
-        onReelShared: (reel) {
-          debugPrint('Shared ${reel.user?.displayName}');
-        },
-        onReelCommented: (reel) {
-          // Show comment dialog or navigate to comments page
-        },
-        onUserFollowed: (user) {
-          debugPrint('${user.isFollowing ? 'Following' : 'Unfollowed'} ${user.displayName}');
-        },
-        onVideoCompleted: (reel) {
-          debugPrint('Video completed: ${reel.id}');
-        },
-        onVideoError: (reel, error) {
-          debugPrint('Error playing video: $error');
-        },
-        onPress: (reel) {
-          debugPrint('Pressed: ${reel.id}');
-        },
-        onLongPress: (reel) {
-          debugPrint('Long pressed: ${reel.id}');
-        },
+        config: const ReelConfig(showDownloadButton: false),
+        onReelChanged: (index) => debugPrint('Reel: $index'),
+        onReelLiked: (reel) => debugPrint('Liked: ${reel.id}'),
+        onVideoError: (reel, error) => debugPrint('Error: $error'),
       ),
     );
   }
@@ -146,11 +97,10 @@ class _MyReelsPageState extends State<MyReelsPage> {
 }
 ```
 
-### Advanced Streaming Configuration
+## Многоформатный стриминг
 
 ```dart
-// Multi-format reel with fallback support
-final multiFormatReel = ReelModel(
+final reel = ReelModel(
   id: 'multi_1',
   videoSource: VideoSource(
     format: VideoFormat.hls,
@@ -162,24 +112,8 @@ final multiFormatReel = ReelModel(
   ),
   thumbnailUrl: 'https://example.com/thumb.jpg',
   duration: const Duration(minutes: 3),
-  user: const ReelUser(
-    id: 'user1',
-    username: 'creator',
-    profilePictureUrl: 'https://example.com/avatar.jpg',
-  ),
-  caption: 'Multi-format video with fallback support',
-);
-
-// Advanced streaming configuration
-final streamingConfig = StreamingConfig(
-  preferredFormat: PreferredStreamingFormat.hls,
-  enableLowLatency: false,
-  maxBitrate: 5000000, // 5 Mbps
-  minBitrate: 500000,  // 500 Kbps
-  fallbackToMp4: true,
-  networkTimeout: 30,    // seconds
-  retryAttempts: 3,
-  enableDrm: false,
+  user: const ReelUser(id: 'user1', username: 'creator'),
+  caption: 'Видео с fallback-форматами',
 );
 
 final config = ReelConfig(
@@ -188,138 +122,64 @@ final config = ReelConfig(
     maxCacheSize: 500 * 1024 * 1024, // 500MB
     cacheDuration: Duration(days: 7),
   ),
-  videoPlayerConfig: VideoPlayerConfig(
-    enableHardwareAcceleration: true,
-    enablePictureInPicture: true,
-    streamingConfig: streamingConfig,
-  ),
   preloadConfig: PreloadConfig(
     preloadAhead: 2,
     preloadBehind: 1,
-    adaptivePreload: true, // reduce preload on low-end devices automatically
+    adaptivePreload: true,
   ),
 );
 ```
 
-## Streaming Formats
-
-### HLS (HTTP Live Streaming)
-- **Best for**: iOS devices, adaptive streaming
-- **File extension**: `.m3u8`
-- **Platform support**: excellent on iOS, good on Android/Web
-
-```dart
-ReelModel.hls(
-  id: 'hls_video',
-  hlsUrl: 'https://example.com/playlist.m3u8',
-  // ... other properties
-);
-```
-
-### DASH (Dynamic Adaptive Streaming)
-- **Best for**: Android devices, high-quality streaming
-- **File extension**: `.mpd`
-- **Platform support**: excellent on Android, good on Web
-
-```dart
-ReelModel.dash(
-  id: 'dash_video',
-  dashUrl: 'https://example.com/manifest.mpd',
-  // ... other properties
-);
-```
-
-### MP4 (Standard Video)
-- **Best for**: universal compatibility
-- **File extension**: `.mp4`
-- **Platform support**: universal
-
-```dart
-ReelModel.mp4(
-  id: 'mp4_video',
-  mp4Url: 'https://example.com/video.mp4',
-  // ... other properties
-);
-```
-
-## Configuration Reference
+## Конфигурация
 
 ### ReelConfig
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `enableCaching` | `bool` | `true` | Enable video caching |
-| `cacheConfig` | `CacheConfig` | `CacheConfig()` | Cache configuration |
-| `preloadConfig` | `PreloadConfig` | `PreloadConfig()` | Preloading settings |
-| `videoPlayerConfig` | `VideoPlayerConfig` | `VideoPlayerConfig()` | Video player configuration |
-| `enablePullToRefresh` | `bool` | `false` | Pull-to-refresh on reel list |
-| `showDownloadButton` | `bool` | `false` | Show download button |
+| Свойство | Тип | По умолчанию | Описание |
+|----------|-----|-------------|----------|
+| `enableCaching` | `bool` | `true` | Кеширование видео на диск |
+| `cacheConfig` | `CacheConfig` | `CacheConfig()` | Настройки кеша |
+| `preloadConfig` | `PreloadConfig` | `PreloadConfig()` | Настройки preload |
+| `autoPlay` | `bool` | `true` | Автозапуск при появлении на экране |
+| `showDownloadButton` | `bool` | `true` | Кнопка скачивания |
+| `enablePullToRefresh` | `bool` | `false` | Pull-to-refresh |
 
 ### PreloadConfig
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `preloadAhead` | `int` | `2` | Videos to preload forward |
-| `preloadBehind` | `int` | `1` | Videos to keep preloaded behind |
-| `maxPreloaded` | `int` | `5` | Max simultaneous preloaded controllers |
-| `adaptivePreload` | `bool` | `true` | Auto-reduce on low-end devices |
-| `preloadOnWiFiOnly` | `bool` | `false` | Restrict preload to WiFi |
+| Свойство | Тип | По умолчанию | Описание |
+|----------|-----|-------------|----------|
+| `preloadAhead` | `int` | `2` | Сколько видео preload'ить вперёд |
+| `preloadBehind` | `int` | `1` | Сколько видео держать позади |
+| `adaptivePreload` | `bool` | `true` | Снижать preload на слабых устройствах |
+| `preloadOnWiFiOnly` | `bool` | `false` | Preload только по WiFi |
 
 ### StreamingConfig
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `preferredFormat` | `PreferredStreamingFormat` | `auto` | Preferred format |
-| `enableLowLatency` | `bool` | `false` | Low latency HLS mode |
-| `maxBitrate` | `int?` | `null` | Max bitrate in bps |
-| `minBitrate` | `int?` | `null` | Min bitrate in bps |
-| `fallbackToMp4` | `bool` | `true` | Fallback to MP4 on error |
-| `networkTimeout` | `int` | `30` | Timeout in seconds |
-| `retryAttempts` | `int` | `3` | Retry count on failure |
-| `enableDrm` | `bool` | `false` | Enable DRM via headers |
-| `drmHeaders` | `Map<String,String>?` | `null` | Custom HTTP headers (for DRM/auth) |
+| Свойство | Тип | По умолчанию | Описание |
+|----------|-----|-------------|----------|
+| `preferredFormat` | `PreferredStreamingFormat` | `auto` | Предпочтительный формат |
+| `enableCaching` | `bool` | `true` | Кеширование стримов |
+| `drmHeaders` | `Map<String,String>?` | `null` | HTTP-заголовки для DRM/auth |
 
----
+## Миграция
 
-## Migration Guide (1.x → 2.0.0)
+### 2.0.0 → 2.1.0
 
-### 1. Переименование виджета
+**1. Зависимости**: `video_player` заменён на `media_kit`. Если ваше приложение импортирует `video_player` напрямую — это не затрагивается, пакеты независимы.
 
-Замените `AwesomeReels` на `SnapReels` во всех файлах:
+**2. Эмулятор**: видеовоспроизведение работает только на реальных Android-устройствах. UI и навигация по ленте работают на эмуляторе (thumbnail отображаются).
 
-```dart
-// До (1.x)
-AwesomeReels(
-  reels: _controller.reels,
-  controller: _controller,
-  config: ReelConfig(),
-)
+**3. API**: публичный API `ReelController`, `SnapReels`, `ReelConfig`, `ReelModel` не изменился. Обновление прозрачное.
 
-// После (2.0.0)
-SnapReels(
-  reels: _controller.reels,
-  controller: _controller,
-  config: ReelConfig(),
-)
-```
+### 1.x → 2.0.0
 
-### 2. Удаление устаревшего параметра
-
-`enableAdaptiveBitrate` помечен как `@Deprecated` и не имеет эффекта. Просто удалите его:
+Замените `AwesomeReels` на `SnapReels`:
 
 ```dart
-// До (1.x)
-StreamingConfig(
-  preferredFormat: PreferredStreamingFormat.hls,
-  enableAdaptiveBitrate: true,   // <-- удалите эту строку
-)
+// До
+AwesomeReels(reels: reels, controller: ctrl, config: config)
 
-// После (2.0.0)
-StreamingConfig(
-  preferredFormat: PreferredStreamingFormat.hls,
-)
+// После
+SnapReels(reels: reels, controller: ctrl, config: config)
 ```
 
-### 3. Ничего больше не нужно менять
-
-Все остальные API обратно совместимы. Публичные классы и методы (`ReelController`, `ReelModel`, `ReelConfig`, `VideoSource`, etc.) не изменились.
+Удалите `enableAdaptiveBitrate` из `StreamingConfig` (deprecated, без эффекта).
