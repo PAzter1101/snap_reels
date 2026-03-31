@@ -73,7 +73,7 @@ class DeviceClassifier {
         return config;
       case DeviceClass.high:
         return config.copyWith(
-          preloadAhead: 3,
+          preloadAhead: 2,
           preloadBehind: 1,
         );
     }
@@ -82,7 +82,8 @@ class DeviceClassifier {
   /// Рекомендуемый размер пула Player'ов для класса устройства.
   ///
   /// low: 2 (current + next), medium: 3 (prev/current/next),
-  /// high: 5 (prev/current + 3 ahead).
+  /// high: 4 (prev/current + 2 ahead). Больше 4 вызывает
+  /// перегрев из-за множества активных hardware-декодеров.
   static int recommendedPoolSize(DeviceClass deviceClass) {
     switch (deviceClass) {
       case DeviceClass.low:
@@ -90,7 +91,7 @@ class DeviceClassifier {
       case DeviceClass.medium:
         return 3;
       case DeviceClass.high:
-        return 5;
+        return 4;
     }
   }
 
