@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import '../models/cache_item.dart';
 import '../models/reel_config.dart';
 import '../utils/url_utils.dart' as url_utils;
-import 'package:video_player/video_player.dart';
 
 export '../models/cache_item.dart';
 
@@ -25,10 +24,6 @@ class CacheManager {
   final Map<String, CacheItem> _cacheIndex = {};
   final Map<String, Future<String?>> _downloadFutures = {};
 
-  // LRU cache for video controllers
-  final Map<String, DateTime> _controllerAccessTimes = {};
-  final Map<String, dynamic> _videoControllers = {};
-  final int _maxControllers = 5; // Tune as needed
   // Max cache size for video files (200MB)
   final int _maxCacheFileSize = 200 * 1024 * 1024;
 
@@ -62,16 +57,13 @@ class CacheManager {
   }) async {
     if (!_isInitialized) await initialize();
 
-    // Check if already cached
     final cachedPath = getCachedFilePath(url);
     if (cachedPath != null) return cachedPath;
 
-    // Check if download is already in progress
     if (_downloadFutures.containsKey(url)) {
       return await _downloadFutures[url];
     }
 
-    // Start download
     final downloadFuture =
         _performDownload(url, onProgress: onProgress, cancelToken: cancelToken);
     _downloadFutures[url] = downloadFuture;
@@ -84,7 +76,6 @@ class CacheManager {
     }
   }
 
-  /// Perform the actual download
   Future<String?> _performDownload(
     String url, {
     Function(int received, int total)? onProgress,
@@ -95,20 +86,13 @@ class CacheManager {
       final fileName = _generateFileName(url);
       final filePath = '${_cacheDirectory.path}/$fileName';
 
-      // Download the file
       await _dio.download(
         url,
         filePath,
         onReceiveProgress: onProgress,
         cancelToken: cancelToken,
-        options: Options(
-          headers: {
-            'User-Agent': 'SnapReels/1.3.0',
-          },
-        ),
       );
 
-      // Verify file was downloaded successfully
       final file = File(filePath);
       if (!await file.exists()) {
         throw Exception('Downloaded file does not exist');
@@ -120,7 +104,6 @@ class CacheManager {
         throw Exception('Downloaded file is empty');
       }
 
-      // Add to cache index and evict if needed
       final cacheItem = CacheItem(
         url: url,
         filePath: filePath,
@@ -132,8 +115,6 @@ class CacheManager {
       );
 
       await _addToCacheIndex(cacheItem);
-
-      // Enforce cache size limits
       await _enforceCacheSize();
 
       return filePath;
@@ -202,34 +183,27 @@ class CacheManager {
     final cacheItem = _cacheIndex[cacheKey];
 
     if (cacheItem != null) {
-      // Delete file
       final file = File(cacheItem.filePath);
       if (await file.exists()) {
         await file.delete();
       }
-
-      // Remove from index
       _cacheIndex.remove(cacheKey);
       await _saveCacheIndex();
     }
   }
 
-  /// Generate cache key from URL (SHA-256, CDN-tokens normalized)
   String _generateCacheKey(String url) {
     return url_utils.generateCacheKey(url);
   }
 
-  /// Generate filename from URL
   String _generateFileName(String url) {
     final uri = Uri.parse(url);
     final extension = uri.path.split('.').last;
     final cacheKey = _generateCacheKey(url);
-    // SHA-256 hex — 64 символа, берём первые 16 для краткости имени файла
     final shortKey = cacheKey.substring(0, 16);
     return '$shortKey.$extension';
   }
 
-  /// Load cache index from storage
   Future<void> _loadCacheIndex() async {
     try {
       final file = File('${_cacheDirectory.path}/cache_index.json');
@@ -246,7 +220,6 @@ class CacheManager {
     }
   }
 
-  /// Save cache index to storage
   Future<void> _saveCacheIndex() async {
     try {
       final file = File('${_cacheDirectory.path}/cache_index.json');
@@ -258,7 +231,6 @@ class CacheManager {
     }
   }
 
-  /// Cleanup expired cache items
   Future<void> _cleanupExpiredCache() async {
     final now = DateTime.now();
     final expiredKeys = <String>[];
@@ -266,8 +238,6 @@ class CacheManager {
     for (final entry in _cacheIndex.entries) {
       if (now.isAfter(entry.value.expiryTime)) {
         expiredKeys.add(entry.key);
-
-        // Delete file
         final file = File(entry.value.filePath);
         if (await file.exists()) {
           try {
@@ -279,7 +249,6 @@ class CacheManager {
       }
     }
 
-    // Remove from index
     for (final key in expiredKeys) {
       _cacheIndex.remove(key);
     }
@@ -290,13 +259,10 @@ class CacheManager {
     }
   }
 
-  /// Enforce cache size limits
   Future<void> _enforceCacheSize() async {
     final stats = await getCacheStats();
-
     if (stats.totalSize <= _config.maxCacheSize) return;
 
-    // Sort by last access time (LRU)
     final sortedItems = _cacheIndex.values.toList()
       ..sort((a, b) => a.lastAccessTime.compareTo(b.lastAccessTime));
 
@@ -305,12 +271,10 @@ class CacheManager {
 
     for (final item in sortedItems) {
       if (currentSize <= _config.maxCacheSize) break;
-
       itemsToRemove.add(item);
       currentSize -= item.fileSize;
     }
 
-    // Remove items
     for (final item in itemsToRemove) {
       final file = File(item.filePath);
       if (await file.exists()) {
@@ -331,16 +295,8 @@ class CacheManager {
   }
 
   /// Clear in-memory caches (called on memory pressure).
-  /// Does NOT delete files on disk — only frees RAM.
   void clearMemoryCache() {
     _memoryFileCache.clear();
-    for (final controller in _videoControllers.values) {
-      try {
-        controller?.dispose();
-      } catch (_) {}
-    }
-    _videoControllers.clear();
-    _controllerAccessTimes.clear();
   }
 
   /// Cancel all ongoing downloads
@@ -348,68 +304,20 @@ class CacheManager {
     _downloadFutures.clear();
   }
 
-  /// Get or create a video controller for a given reel ID
-  dynamic getOrCreateVideoController(String reelId, String url) {
-    if (_videoControllers.containsKey(reelId)) {
-      _controllerAccessTimes[reelId] = DateTime.now();
-      return _videoControllers[reelId];
-    }
-
-    // Before creating, evict if over limit
-    if (_videoControllers.length >= _maxControllers) {
-      _evictOldestController();
-    }
-
-    // Use cache file if available
-    final filePath = getCachedFilePath(url);
-    final controller = filePath != null
-        ? _createControllerFromFile(filePath)
-        : _createControllerFromUrl(url);
-
-    // Initialize the controller immediately
-    controller.initialize().then((_) {
-      debugPrint('Video controller initialized for reel: $reelId');
-    }).catchError((error) {
-      debugPrint(
-          'Error initializing video controller for reel $reelId: $error');
-      _videoControllers.remove(reelId);
-      _controllerAccessTimes.remove(reelId);
-    });
-
-    _videoControllers[reelId] = controller;
-    _controllerAccessTimes[reelId] = DateTime.now();
-    return controller;
-  }
-
-  /// Evict the oldest controller
-  void _evictOldestController() {
-    if (_videoControllers.isEmpty) return;
-
-    final oldest = _controllerAccessTimes.entries
-        .reduce((a, b) => a.value.isBefore(b.value) ? a : b)
-        .key;
-
-    _videoControllers[oldest]?.dispose();
-    _videoControllers.remove(oldest);
-    _controllerAccessTimes.remove(oldest);
-  }
-
-  /// Add to cache index and evict if over size
   Future<void> _addToCacheIndex(CacheItem cacheItem) async {
     _cacheIndex[cacheItem.cacheKey] = cacheItem;
     await _saveCacheIndex();
     await _evictIfOverCacheSize();
   }
 
-  /// Evict least recently used files if over max cache size (parallel file checks)
   Future<void> _evictIfOverCacheSize() async {
     int totalSize =
         _cacheIndex.values.fold(0, (sum, item) => sum + item.fileSize);
     if (totalSize <= _maxCacheFileSize) return;
-    // Sort by last access time (oldest first)
+
     final sorted = _cacheIndex.values.toList()
       ..sort((a, b) => a.lastAccessTime.compareTo(b.lastAccessTime));
-    // Check file existence in parallel
+
     final futures = <Future>[];
     for (final item in sorted) {
       if (totalSize <= _maxCacheFileSize) break;
@@ -427,23 +335,8 @@ class CacheManager {
     await _saveCacheIndex();
   }
 
-  dynamic _createControllerFromFile(String filePath) {
-    return VideoPlayerController.file(File(filePath));
-  }
-
-  // Helper to create controller from url
-  dynamic _createControllerFromUrl(String url) {
-    return VideoPlayerController.networkUrl(Uri.parse(url));
-  }
-
   /// Dispose the cache manager
   void dispose() {
-    for (final controller in _videoControllers.values) {
-      controller.dispose();
-    }
-    _videoControllers.clear();
-    _controllerAccessTimes.clear();
     _downloadFutures.clear();
   }
 }
-

@@ -1,3 +1,35 @@
+## 2.1.0
+
+### ⚠️ Breaking Changes
+- **Миграция на media_kit** — `video_player` заменён на `media_kit` + `media_kit_video` + `media_kit_libs_video`. Пакет `video_player` больше не используется. Приложение должно вызвать `MediaKit.ensureInitialized()` до использования (вызывается автоматически в `ReelController.initialize()`).
+- **Не работает на Android-эмуляторе** — media_kit не поддерживает рендеринг текстур на эмуляторе. Тестирование — только на реальных устройствах.
+
+### Performance
+- **Player Pool (3 слота)** — вместо create/dispose цикла на каждый свайп теперь используется фиксированный пул из 3 `Player`'ов (prev/current/next). При переключении видео вызывается `player.open()` на существующем Player'е — hardware-декодер переиспользуется без пересоздания. Устраняет исчерпание пула декодеров и GC-давление при быстром скролле.
+- **Slot recycling** — при свайпе самый дальний слот автоматически переиспользуется для preload следующего видео. Без dispose/recreate нативных ресурсов.
+
+### Architecture
+- **Декомпозиция reel_controller.dart** — 770 строк разбиты на 5 part-файлов:
+  - `_reel_state_mixin.dart` — реактивное состояние и геттеры
+  - `_video_lifecycle_mixin.dart` — пул Player'ов, slot assignment, stream-подписки
+  - `_preload_manager_mixin.dart` — preload через slot recycling
+  - `_playback_mixin.dart` — play/pause/volume/seek
+  - `reel_controller.dart` — тонкий оркестратор
+
+### Bug Fixes
+- **Фикс гонки `_isVideoInitializing`** — отменённые инициализации (serial mismatch) больше не сбрасывают `_isVideoInitializing` в `finally`, что исправляет баг с незагрузкой видео при быстром свайпе через 4-5 страниц.
+- **Фикс race condition при реинициализации** — пул создаётся один раз, при повторных `initialize()` выполняется `_resetPool()` (stop + clear assignments) вместо dispose/recreate, исключая ошибку "Player has been disposed".
+
+### Maintenance
+- Убран `video_player` из зависимостей.
+- Убран хардкод `User-Agent` из `cache_manager.dart`.
+- Убраны `VideoPlayerController`-методы из `cache_manager.dart` и `streaming_service.dart` — пул управляет Player'ами самостоятельно.
+- `streaming_service.dart` упрощён до `resolveStreamingUrl()` — только выбор формата (HLS/DASH/MP4), без создания контроллеров.
+- `reel_progress_indicator.dart` переведён с `ValueListenableBuilder<VideoPlayerValue>` на `Obx` с `currentPosition`/`totalDuration`.
+- `reel_overlay.dart` — убраны прямые обращения к `VideoPlayerController`, используются Rx-геттеры.
+
+---
+
 ## 2.0.0
 
 ### ⚠️ Breaking Changes

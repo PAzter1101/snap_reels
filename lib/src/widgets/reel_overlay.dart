@@ -169,9 +169,7 @@ class _ReelOverlayState extends State<ReelOverlay>
                 ),
 
               // Loading indicator
-              if (widget.controller.currentVideoController != null &&
-                  !widget
-                      .controller.currentVideoController!.value.isInitialized &&
+              if (widget.controller.isVideoInitializing &&
                   !widget.controller.hasError)
                 Center(
                   child: Container(
@@ -401,8 +399,7 @@ class _ReelOverlayState extends State<ReelOverlay>
   }
 
   Widget _buildBottomControls(BuildContext context) {
-    final isPlaying =
-        widget.controller.currentVideoController?.value.isPlaying ?? false;
+    final isPlaying = widget.controller.isPlaying.value;
 
     return Container(
       padding: EdgeInsets.only(
