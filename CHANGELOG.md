@@ -1,3 +1,15 @@
+## 2.1.3
+
+### Bug Fixes
+- **Фикс "No active player with ID"** — при передаче внешнего уже инициализированного `ReelController` в `SnapReels`, виджет больше не вызывает `initialize()` повторно. Двойная инициализация вызывала `_resetPool()` во время активного preload, что приводило к fatal-ошибке `StateError: Bad state: No active player with ID 1` из media_kit.
+- **Guard в `_preloadVideo` и `_initializeCurrentVideo`** — добавлена проверка на пустой пул и disposed-состояние перед работой с Player'ами, предотвращая краш при race condition.
+
+### Maintenance
+- Замена устаревшего `flutter_lints` на `lints: ^5.1.1` (в пакете и в example).
+- Обновлены зависимости: `connectivity_plus` ^7.1.0, `device_info_plus` ^12.4.0, `share_plus` ^12.0.2, `mockito` ^5.6.4, `build_runner` ^2.13.1.
+
+---
+
 ## 2.1.2
 
 ### New Features

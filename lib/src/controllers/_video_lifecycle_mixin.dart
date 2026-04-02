@@ -51,6 +51,7 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
     final expectedSerial = serial ?? _initSerial;
     final currentReel = _currentReel.value;
     if (currentReel == null) return;
+    if (_players.isEmpty || _isDisposed.value) return;
 
     final currentIndex = _currentIndex.value;
 

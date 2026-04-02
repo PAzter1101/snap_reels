@@ -24,6 +24,7 @@ mixin _PreloadManagerMixin
   Future<void> _preloadVideo(int index) async {
     if (index < 0 || index >= _reels.length) return;
     if (_reelToSlot.containsKey(index)) return; // already in a slot
+    if (_players.isEmpty || _isDisposed.value) return;
 
     try {
       debugPrint('Preloading video at index $index');

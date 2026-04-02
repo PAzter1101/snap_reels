@@ -114,7 +114,9 @@ class _SnapReelsState extends State<SnapReels>
     } else {
       _controller = Get.put(ReelController(), permanent: true);
     }
-    _initializeController();
+    if (!_controller.isInitialized.value) {
+      _initializeController();
+    }
   }
 
   @override
