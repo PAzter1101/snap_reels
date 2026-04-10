@@ -599,9 +599,11 @@ class _ReelActionsState extends State<ReelActions>
   void _showMoreOptions(BuildContext context, ReelController controller) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
+      builder: (context) => SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Bookmark in more menu
@@ -664,6 +666,7 @@ class _ReelActionsState extends State<ReelActions>
                     },
                   )),
           ],
+        ),
         ),
       ),
     );

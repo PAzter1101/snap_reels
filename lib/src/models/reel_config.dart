@@ -114,6 +114,9 @@ class ReelConfig {
   /// Caption configuration
   final int maxCaptionLines;
 
+  /// Whether to show hashtags below the caption
+  final bool showHashtags;
+
   /// Custom actions for more menu
   final List<CustomAction> customActions;
 
@@ -182,6 +185,7 @@ class ReelConfig {
     this.followButtonColor = Colors.white,
     this.followingButtonColor = Colors.white70,
     this.maxCaptionLines = 3,
+    this.showHashtags = true,
     this.customActions = const [],
     this.onCommentTap,
     this.onShareTap,
@@ -241,6 +245,7 @@ class ReelConfig {
     Color? followButtonColor,
     Color? followingButtonColor,
     int? maxCaptionLines,
+    bool? showHashtags,
     List<CustomAction>? customActions,
     void Function(ReelModel)? onCommentTap,
     void Function(ReelModel)? onShareTap,
@@ -303,6 +308,7 @@ class ReelConfig {
       followButtonColor: followButtonColor ?? this.followButtonColor,
       followingButtonColor: followingButtonColor ?? this.followingButtonColor,
       maxCaptionLines: maxCaptionLines ?? this.maxCaptionLines,
+      showHashtags: showHashtags ?? this.showHashtags,
       customActions: customActions ?? this.customActions,
       onCommentTap: onCommentTap ?? this.onCommentTap,
       onShareTap: onShareTap ?? this.onShareTap,

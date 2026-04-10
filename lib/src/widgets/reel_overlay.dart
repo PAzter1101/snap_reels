@@ -349,7 +349,7 @@ class _ReelOverlayState extends State<ReelOverlay>
         const SizedBox(height: 8),
 
         // Hashtags
-        if (widget.reel.hashtags.isNotEmpty)
+        if (widget.config.showHashtags && widget.reel.hashtags.isNotEmpty)
           Wrap(
             spacing: 8,
             runSpacing: 4,
