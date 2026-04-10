@@ -1,3 +1,16 @@
+## 2.2.0
+
+### New Features
+- **`showHashtags`** в `ReelConfig` — управляет отображением хештегов под описанием. По умолчанию `true` (обратная совместимость). При `false` блок `#hashtag` полностью скрывается.
+
+### Bug Fixes
+- **SafeArea в контекстном меню** — `_showMoreOptions()` bottom sheet теперь обёрнут в `SafeArea(top: false)`. На устройствах с gesture navigation bar (Samsung A54 и др.) нижние пункты меню больше не перекрываются системной панелью.
+
+### Maintenance
+- Обновлены зависимости: `connectivity_plus` ^7.1.1, `lottie` ^3.3.3, `lints` ^6.1.0.
+
+---
+
 ## 2.1.3
 
 ### Bug Fixes

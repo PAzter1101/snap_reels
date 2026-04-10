@@ -31,7 +31,7 @@ Flutter-пакет для создания вертикальных видеол
 
 ```yaml
 dependencies:
-  snap_reels: ^2.1.0
+  snap_reels: ^2.2.0
 ```
 
 ### Требования
@@ -141,6 +141,7 @@ final config = ReelConfig(
 | `preloadConfig` | `PreloadConfig` | `PreloadConfig()` | Настройки preload |
 | `autoPlay` | `bool` | `true` | Автозапуск при появлении на экране |
 | `showDownloadButton` | `bool` | `true` | Кнопка скачивания |
+| `showHashtags` | `bool` | `true` | Хештеги под описанием |
 | `enablePullToRefresh` | `bool` | `false` | Pull-to-refresh |
 
 ### PreloadConfig
