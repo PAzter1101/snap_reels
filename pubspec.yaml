@@ -1,13 +1,13 @@
 name: snap_reels
 description: A powerful, customizable Flutter widget for creating TikTok/Instagram-style vertical video reels with advanced features like caching, analytics, and rich interactions.
-version: 2.2.0
+version: 2.3.0
 homepage: https://github.com/PAzter1101/snap_reels
 repository: https://github.com/PAzter1101/snap_reels
 issue_tracker: https://github.com/PAzter1101/snap_reels/issues
 
 environment:
-  sdk: ^3.0.0
-  flutter: ">=3.0.0"
+  sdk: ^3.10.0
+  flutter: ">=3.38.1"
 
 dependencies:
   flutter:
@@ -22,12 +22,9 @@ dependencies:
   path_provider: ^2.1.5
   lottie: ^3.3.3
 
-  # Utilities
-  share_plus: ^12.0.2
-  
   # Platform specific
-  wakelock_plus: ^1.5.1
-  device_info_plus: ^12.4.0
+  wakelock_plus: ^1.6.0
+  device_info_plus: ^13.0.0
   iconly: ^1.0.1
   font_awesome_flutter: ^11.0.0
   
@@ -43,6 +40,8 @@ dev_dependencies:
   lints: ^6.1.0
   mockito: ^5.6.4
   build_runner: ^2.13.1
+  path_provider_platform_interface: ^2.1.0
+  plugin_platform_interface: ^2.1.0
 
 flutter:
   assets:

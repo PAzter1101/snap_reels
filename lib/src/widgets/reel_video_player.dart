@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -5,6 +7,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 import '../models/reel_model.dart';
 import '../models/reel_config.dart';
 import '../controllers/reel_controller.dart';
+import 'cached_thumbnail.dart';
 import 'package:get/get.dart';
 
 /// Video player widget for reels.
@@ -34,11 +37,13 @@ class ReelVideoPlayer extends StatefulWidget {
 
 class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   final RxBool _isVisible = false.obs;
+  final RxBool _hasFirstFrame = false.obs;
   bool _isInitialized = false;
 
   Player? _assignedPlayer;
   VideoController? _videoController;
   List<Worker> _workers = [];
+  StreamSubscription<int?>? _widthSubscription;
 
   @override
   void initState() {
@@ -60,6 +65,8 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
       w.dispose();
     }
     _workers.clear();
+    _widthSubscription?.cancel();
+    _widthSubscription = null;
     super.dispose();
   }
 
@@ -67,10 +74,33 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   void _syncPlayer() {
     final player = widget.controller.getPlayerForReel(widget.reel);
     if (player != _assignedPlayer) {
-      _assignedPlayer = player;
-      _videoController = player != null ? VideoController(player) : null;
+      _attachPlayer(player);
       if (mounted) setState(() {});
     }
+  }
+
+  /// Keep thumbnail visible until libmpv reports the first decoded frame
+  /// (`player.stream.width` > 0). Without this guard media_kit's `Video`
+  /// widget renders a solid black background during load/error, occluding
+  /// the thumbnail the whole time.
+  void _attachPlayer(Player? player) {
+    _widthSubscription?.cancel();
+    _widthSubscription = null;
+    _hasFirstFrame.value = false;
+    _assignedPlayer = player;
+    _videoController = player != null ? VideoController(player) : null;
+    if (player == null) return;
+    final initialWidth = player.state.width ?? 0;
+    if (initialWidth > 0) {
+      _hasFirstFrame.value = true;
+    }
+    _widthSubscription = player.stream.width.listen((width) {
+      if (!mounted) return;
+      final hasFrame = (width ?? 0) > 0;
+      if (hasFrame != _hasFirstFrame.value) {
+        _hasFirstFrame.value = hasFrame;
+      }
+    });
   }
 
   Future<void> _initializeVideo() async {
@@ -97,10 +127,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     // different Player, and we drop the VideoController immediately.
     final currentPlayer = widget.controller.getPlayerForReel(widget.reel);
     if (currentPlayer != _assignedPlayer) {
-      _assignedPlayer = currentPlayer;
-      _videoController = currentPlayer != null
-          ? VideoController(currentPlayer)
-          : null;
+      _attachPlayer(currentPlayer);
     }
 
     return VisibilityDetector(
@@ -110,8 +137,11 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
         fit: StackFit.expand,
         children: [
           _buildThumbnail(),
-          if (_videoController != null)
-            SizedBox.expand(
+          Obx(() {
+            if (_videoController == null || !_hasFirstFrame.value) {
+              return const SizedBox.shrink();
+            }
+            return SizedBox.expand(
               child: Video(
                 key: ValueKey(_assignedPlayer.hashCode),
                 controller: _videoController!,
@@ -119,7 +149,8 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
                 fill: Colors.transparent,
                 controls: NoVideoControls,
               ),
-            ),
+            );
+          }),
           Obx(() => _buildLoadingOverlay()),
         ],
       ),
@@ -129,15 +160,20 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   Widget _buildThumbnail() {
     final url = widget.reel.thumbnailUrl;
     if (url == null || url.isEmpty) {
-      return Container(color: Colors.black);
+      debugPrint(
+        'ReelVideoPlayer: no thumbnailUrl for reel ${widget.reel.id}',
+      );
+      return _buildThumbnailFallback();
     }
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      errorBuilder: (_, __, ___) => Container(color: Colors.black),
-    );
+    return CachedThumbnail(url: url, fallback: _buildThumbnailFallback());
+  }
+
+  Widget _buildThumbnailFallback() {
+    final builder = widget.config.thumbnailFallbackBuilder;
+    if (builder != null) {
+      return builder(context, widget.reel);
+    }
+    return Container(color: Colors.black);
   }
 
   Widget _buildLoadingOverlay() {

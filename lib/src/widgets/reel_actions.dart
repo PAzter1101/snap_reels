@@ -77,14 +77,14 @@ class _ReelActionsState extends State<ReelActions>
         LikeButton(
           isLiked: widget.reel.isLiked,
           likeCount: widget.reel.likesCount,
-          size: 32,
+          size: widget.config.likeButtonSize,
           countPostion: CountPostion.bottom,
           likeCountAnimationType: LikeCountAnimationType.none,
           likeBuilder: (bool isLiked) {
             return Icon(
               IconlyLight.heart,
               color: isLiked ? Colors.red : widget.config.textColor,
-              size: 32,
+              size: widget.config.likeButtonSize,
             );
           },
           countBuilder: (int? count, bool isLiked, String text) {
@@ -103,7 +103,7 @@ class _ReelActionsState extends State<ReelActions>
             return !isLiked;
           },
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: widget.config.actionSpacing),
         // Comment button (only show if enabled)
         if (widget.config.showCommentButton)
           _buildActionButton(
@@ -120,7 +120,7 @@ class _ReelActionsState extends State<ReelActions>
           count: widget.reel.sharesCount,
           onTap: () => _handleShare(controller),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: widget.config.actionSpacing),
         // Bookmark button (only show if not in more menu)
         if (widget.config.showBookmarkButton &&
             !widget.config.bookmarkInMoreMenu)
@@ -135,7 +135,7 @@ class _ReelActionsState extends State<ReelActions>
           ),
         if (widget.config.showBookmarkButton &&
             !widget.config.bookmarkInMoreMenu)
-          const SizedBox(height: 16),
+          SizedBox(height: widget.config.actionSpacing),
         // Download button (only show if not in more menu)
         if (widget.config.showDownloadButton &&
             !widget.config.downloadInMoreMenu)
@@ -146,7 +146,7 @@ class _ReelActionsState extends State<ReelActions>
           ),
         if (widget.config.showDownloadButton &&
             !widget.config.downloadInMoreMenu)
-          const SizedBox(height: 16),
+          SizedBox(height: widget.config.actionSpacing),
         // More options button
         if (widget.config.showMoreButton)
           _buildActionButton(
@@ -171,7 +171,7 @@ class _ReelActionsState extends State<ReelActions>
     Widget iconWidget = Icon(
       icon,
       color: iconColor,
-      size: 28,
+      size: widget.config.actionIconSize,
     );
 
     if (animation != null && !_isDisposed) {
@@ -182,10 +182,16 @@ class _ReelActionsState extends State<ReelActions>
     }
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        constraints: BoxConstraints(
+          minWidth: widget.config.actionMinTapTargetSize,
+          minHeight: widget.config.actionMinTapTargetSize,
+        ),
+        alignment: Alignment.center,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             iconWidget,
             if (count != null && count > 0) ...[

@@ -45,8 +45,6 @@ class ReelController extends GetxController
     int initialIndex = 0,
   }) async {
     try {
-      MediaKit.ensureInitialized();
-
       _error.value = null;
       _isInitialized.value = false;
 
@@ -55,6 +53,19 @@ class ReelController extends GetxController
 
       if (_reels.isEmpty) {
         throw Exception('No reels provided');
+      }
+
+      MediaKit.ensureInitialized();
+
+      if (_config.enableCaching) {
+        try {
+          await CacheManager.instance.initialize(
+            dio: _config.httpClient,
+            config: _config.cacheConfig,
+          );
+        } catch (e) {
+          debugPrint('CacheManager initialization failed: $e');
+        }
       }
 
       _reelsList.value = List.from(_reels);

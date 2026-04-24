@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'reel_model.dart';
 import 'cache_config.dart';
@@ -45,17 +46,78 @@ class ReelConfig {
   /// Cache configuration
   final CacheConfig? cacheConfig;
 
+  /// Optional pre-configured [Dio] used by [CacheManager] for thumbnail and
+  /// video prefetch. Pass the host app's HTTP client (e.g. wired with
+  /// `NativeAdapter` + `CronetEngine`) to share its connection pool, TLS
+  /// session cache and interceptors. When null, [CacheManager] creates its
+  /// own plain [Dio].
+  final Dio? httpClient;
+
   /// Whether to enable analytics
   final bool enableAnalytics;
 
   /// Preload configuration
   final PreloadConfig preloadConfig;
 
-  /// Error widget builder
+  /// Error widget builder — inline error shown over the video area by
+  /// [ReelVideoPlayer]. For the full-screen error dialog in the reel overlay
+  /// use [errorDialogBuilder].
   final Widget Function(BuildContext context, String error)? errorWidgetBuilder;
 
-  /// Loading widget builder
+  /// Loading widget builder — inline loading indicator shown over the video
+  /// area by [ReelVideoPlayer]. For the overlay-level buffering indicator
+  /// use [bufferingBuilder].
   final Widget Function(BuildContext context)? loadingWidgetBuilder;
+
+  /// Custom builder for the full-screen error dialog shown by the reel
+  /// overlay when video playback fails. Receives the [ReelModel] currently
+  /// on screen, the raw error message and callbacks to retry playback or
+  /// dismiss the error. When null, a default Material-style dialog is shown.
+  final Widget Function(
+    BuildContext context,
+    ReelModel reel,
+    String error,
+    VoidCallback onRetry,
+    VoidCallback onCancel,
+  )? errorDialogBuilder;
+
+  /// Custom builder for the buffering indicator shown by the reel overlay
+  /// while the video is loading more data. When null, a default
+  /// [CircularProgressIndicator] with "Buffering..." label is shown.
+  final Widget Function(BuildContext context)? bufferingBuilder;
+
+  /// Custom builder for the thumbnail fallback shown by [ReelVideoPlayer]
+  /// when [ReelModel.thumbnailUrl] is null/empty or [Image.network] fails.
+  /// Receives the reel so the host can render a content-specific placeholder
+  /// (logo, gradient, initials, icon). When null, a solid black background
+  /// is used.
+  final Widget Function(BuildContext context, ReelModel reel)?
+      thumbnailFallbackBuilder;
+
+  /// Minimum size of the clickable area around each action button
+  /// (comment, share, bookmark, download, more). The visual icon stays the
+  /// size of [actionIconSize]; only the hit area is expanded via a transparent
+  /// centered container. Default 44pt matches the pre-2.3.0 behaviour of
+  /// `EdgeInsets.all(8)` around a 28pt icon; raise to 48+ for Apple HIG /
+  /// Material accessibility compliance or larger-finger UX.
+  final double actionMinTapTargetSize;
+
+  /// Size of the icon inside non-like action buttons (visual only).
+  final double actionIconSize;
+
+  /// Size of the like button (`LikeButton.size`) and the heart icon inside.
+  /// Since `LikeButton` does not support a separate hit-area, this value
+  /// controls both visual and tap target for the like button.
+  final double likeButtonSize;
+
+  /// Vertical gap between adjacent action buttons in the column.
+  final double actionSpacing;
+
+  /// Minimum height of the clickable area around each hashtag chip in the
+  /// caption. The visual text stays unchanged; only the hit area is expanded.
+  /// Default `0` disables the expansion (hit area equals text size — matches
+  /// pre-2.3.0 behaviour). Set to 40-48 for comfortable finger targets.
+  final double hashtagMinTapTargetSize;
 
   /// Whether to show shimmer effect while loading
   final bool showShimmerWhileLoading;
@@ -156,10 +218,19 @@ class ReelConfig {
     this.controlsAutoHideDuration = const Duration(seconds: 3),
     this.enableCaching = true,
     this.cacheConfig,
+    this.httpClient,
     this.enableAnalytics = false,
     this.preloadConfig = const PreloadConfig(),
     this.errorWidgetBuilder,
     this.loadingWidgetBuilder,
+    this.errorDialogBuilder,
+    this.bufferingBuilder,
+    this.thumbnailFallbackBuilder,
+    this.actionMinTapTargetSize = 44,
+    this.actionIconSize = 28,
+    this.likeButtonSize = 32,
+    this.actionSpacing = 16,
+    this.hashtagMinTapTargetSize = 0,
     this.showShimmerWhileLoading = true,
     this.shimmerConfig,
     this.physics,
@@ -216,10 +287,26 @@ class ReelConfig {
     Duration? controlsAutoHideDuration,
     bool? enableCaching,
     CacheConfig? cacheConfig,
+    Dio? httpClient,
     bool? enableAnalytics,
     PreloadConfig? preloadConfig,
     Widget Function(BuildContext context, String error)? errorWidgetBuilder,
     Widget Function(BuildContext context)? loadingWidgetBuilder,
+    Widget Function(
+      BuildContext context,
+      ReelModel reel,
+      String error,
+      VoidCallback onRetry,
+      VoidCallback onCancel,
+    )? errorDialogBuilder,
+    Widget Function(BuildContext context)? bufferingBuilder,
+    Widget Function(BuildContext context, ReelModel reel)?
+        thumbnailFallbackBuilder,
+    double? actionMinTapTargetSize,
+    double? actionIconSize,
+    double? likeButtonSize,
+    double? actionSpacing,
+    double? hashtagMinTapTargetSize,
     bool? showShimmerWhileLoading,
     ShimmerConfig? shimmerConfig,
     ScrollPhysics? physics,
@@ -278,10 +365,22 @@ class ReelConfig {
           controlsAutoHideDuration ?? this.controlsAutoHideDuration,
       enableCaching: enableCaching ?? this.enableCaching,
       cacheConfig: cacheConfig ?? this.cacheConfig,
+      httpClient: httpClient ?? this.httpClient,
       enableAnalytics: enableAnalytics ?? this.enableAnalytics,
       preloadConfig: preloadConfig ?? this.preloadConfig,
       errorWidgetBuilder: errorWidgetBuilder ?? this.errorWidgetBuilder,
       loadingWidgetBuilder: loadingWidgetBuilder ?? this.loadingWidgetBuilder,
+      errorDialogBuilder: errorDialogBuilder ?? this.errorDialogBuilder,
+      bufferingBuilder: bufferingBuilder ?? this.bufferingBuilder,
+      thumbnailFallbackBuilder:
+          thumbnailFallbackBuilder ?? this.thumbnailFallbackBuilder,
+      actionMinTapTargetSize:
+          actionMinTapTargetSize ?? this.actionMinTapTargetSize,
+      actionIconSize: actionIconSize ?? this.actionIconSize,
+      likeButtonSize: likeButtonSize ?? this.likeButtonSize,
+      actionSpacing: actionSpacing ?? this.actionSpacing,
+      hashtagMinTapTargetSize:
+          hashtagMinTapTargetSize ?? this.hashtagMinTapTargetSize,
       showShimmerWhileLoading:
           showShimmerWhileLoading ?? this.showShimmerWhileLoading,
       shimmerConfig: shimmerConfig ?? this.shimmerConfig,

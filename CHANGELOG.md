@@ -1,3 +1,32 @@
+## 2.3.0
+
+### New Features
+- **`ReelConfig.httpClient`** — необязательное поле `Dio?`, пробрасываемое в `CacheManager.initialize()`. Позволяет переиспользовать HTTP-клиент хост-приложения (например, с `NativeAdapter` + `CronetEngine`), чтобы делить connection pool, TLS session cache и interceptors при prefetch видео и thumbnails.
+- **`ReelConfig.errorDialogBuilder`** — кастомизация full-screen error-попапа в overlay. Билдер получает `ReelModel` текущего reel'а, `errorMessage` и два колбэка (`onRetry`, `onCancel`) — host-приложение может полностью заменить UI на свой дизайн и показать контекст (например, thumbnail) о каком именно видео идёт речь.
+- **`ReelConfig.bufferingBuilder`** — кастомизация индикатора буферизации в overlay. Билдер возвращает произвольный виджет вместо дефолтного `CircularProgressIndicator` с надписью «Buffering...».
+- **Новые публичные виджеты** — `ReelErrorOverlay` и `ReelBufferingIndicator` вынесены из `reel_overlay.dart` как переиспользуемые building blocks; билдеры выше вызывают их или пользовательский UI.
+- **`ReelConfig.thumbnailFallbackBuilder`** — кастомный виджет-заглушка вместо чёрного `Container` когда `thumbnailUrl` пустой или загрузка упала. Билдер получает `ReelModel`, поэтому host-приложение может показать content-specific placeholder (градиент, иконку, лого, инициалы).
+- **Thumbnail идёт через `CacheManager`** — новый внутренний виджет `CachedThumbnail` заменил `Image.network` в `ReelVideoPlayer`. Теперь thumbnail-запросы используют тот же `Dio` (с native-адаптером/Cronet при соответствующей настройке host-приложения), попадают в общий connection pool и сохраняются на диск по LRU. Ошибки скачивания и декодирования попадают в `debugPrint` для диагностики.
+- **Настраиваемые tap targets без влияния на визуал** — пять новых полей в `ReelConfig`: `actionMinTapTargetSize` (дефолт `44` — равно прошлому поведению с `padding: EdgeInsets.all(8)` вокруг 28pt иконки), `actionIconSize` (дефолт `28`), `likeButtonSize` (дефолт `32`), `actionSpacing` (дефолт `16`), `hashtagMinTapTargetSize` (дефолт `0` — hit area равна тексту, как было). `actionMinTapTargetSize` и `hashtagMinTapTargetSize` задают **минимальный размер кликабельной области** через `Container(constraints:, alignment: center)` + `HitTestBehavior.opaque` — визуальный размер иконки/текста при этом не меняется. Дефолты сохраняют обратную совместимость — потребители могут поднять значения до 48/56 для Apple HIG / Material accessibility compliance или плотных UX. Затронутые элементы: action buttons (comment/share/bookmark/download/more) в `reel_actions.dart` и hashtag-чипы в `reel_overlay.dart`. Остальные tappable-элементы overlay (bottom-controls `IconButton`'ы, retry в inline error, Material-диалоги) уже имеют 48pt tap-таргеты встроенно.
+
+### Bug Fixes
+- **Инициализация `CacheManager`** — починен латентный баг: поля `_dio` и `_config` были объявлены как `late` и никогда не присваивались, а `_isInitialized` был `final bool = false`. Из-за этого любой вызов `downloadAndCache` реально ничего не кэшировал (ошибки глушились `Future.microtask`). Теперь `CacheManager.instance.initialize()` вызывается из `ReelController.initialize()` с параметрами из `ReelConfig`, идемпотентен и корректно выставляет `_isInitialized`.
+- **Порядок проверок в `ReelController.initialize`** — валидация пустого списка reels перенесена до вызова `MediaKit.ensureInitialized()`. Пустой `SnapReels(reels: [])` больше не требует наличия libmpv на хосте.
+- **Thumbnail не перекрывается чёрным `Video`** — до первого декодированного кадра `ReelVideoPlayer` теперь держит `Video` скрытым (подписка на `player.stream.width`). Раньше media_kit рендерил solid-black background поверх thumbnail всё время буферизации и после ошибки.
+- **`Buffering…` больше не рисуется поверх error-диалога** — overlay использует `if/else if`: при `hasError == true` buffering-индикатор не показывается, даже если стрим буферизации продолжает тикать.
+
+### Dependencies
+- **Удалён `share_plus`** — был заявлен в `pubspec.yaml`, но нигде не использовался в коде пакета.
+- **`wakelock_plus` ^1.5.1 → ^1.6.0** (транзитивно тянет `win32 ^6.0.0` и `package_info_plus ^10`).
+- **`device_info_plus` ^12.4.0 → ^13.0.0** (API потребителя без изменений, только `win32` bump и повышенные минимумы SDK).
+- **Environment** поднят до `Dart ^3.10.0`, `Flutter >=3.38.1` — требование `device_info_plus 13.1.0` / `wakelock_plus 1.6.0`. На `flutter 3.41.5` (текущая в CI GameReel) — работает без замечаний.
+
+### Maintenance
+- Добавлен unit-тест `cache_manager_test.dart`: проверяет идемпотентность `initialize()` и работоспособность публичного API после инициализации (отсутствие `LateInitializationError`).
+- В `CachedThumbnail.errorBuilder` заменены `__` на `_` (новый lint `unnecessary_underscores` в Dart ≥3.10).
+
+---
+
 ## 2.2.0
 
 ### New Features

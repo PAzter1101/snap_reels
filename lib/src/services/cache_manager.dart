@@ -19,7 +19,7 @@ class CacheManager {
   late Dio _dio;
   late Directory _cacheDirectory;
   late CacheConfig _config;
-  final bool _isInitialized = false;
+  bool _isInitialized = false;
 
   final Map<String, CacheItem> _cacheIndex = {};
   final Map<String, Future<String?>> _downloadFutures = {};
@@ -30,12 +30,30 @@ class CacheManager {
   // In-memory cache for recently used files (fast access)
   final Map<String, String> _memoryFileCache = {};
 
-  /// Initialize the cache manager
-  Future<void> initialize() async {
-    _cacheDirectory = await getTemporaryDirectory();
+  /// Initialize the cache manager. Safe to call multiple times — only the
+  /// first call assigns [dio] / [config]; subsequent calls are no-ops.
+  ///
+  /// Pass a pre-configured [dio] (e.g. with `NativeAdapter` + `CronetEngine`)
+  /// to reuse the host application's HTTP stack, including its connection
+  /// pool, TLS session cache and interceptors. When omitted, a plain [Dio]
+  /// is used.
+  Future<void> initialize({Dio? dio, CacheConfig? config}) async {
+    if (_isInitialized) {
+      if (dio != null && !identical(dio, _dio)) {
+        debugPrint(
+          'CacheManager: already initialized with a different Dio; keeping the first one',
+        );
+      }
+      return;
+    }
+    final cacheDir = await getTemporaryDirectory();
+    _dio = dio ?? Dio();
+    _config = config ?? const CacheConfig();
+    _cacheDirectory = cacheDir;
     await _loadCacheIndex();
     await _cleanupExpiredCache();
     await _enforceCacheSize();
+    _isInitialized = true;
   }
 
   /// Get cached file path for a URL (check memory cache first)

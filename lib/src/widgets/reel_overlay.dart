@@ -6,6 +6,8 @@ import '../models/reel_config.dart';
 import '../models/reel_model.dart';
 import '../utils/reel_utils.dart';
 import 'reel_actions.dart';
+import 'reel_buffering_indicator.dart';
+import 'reel_error_overlay.dart';
 import 'reel_progress_indicator.dart';
 
 /// Overlay widget that displays over the video with user info, actions, and controls
@@ -183,38 +185,19 @@ class _ReelOverlayState extends State<ReelOverlay>
                   ),
                 ),
 
-              // Error overlay
-              if (widget.controller.hasError) _buildErrorOverlay(context),
-
-              // Buffering indicator
-              if (widget.controller.isBuffering.value)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            widget.config.accentColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Buffering...',
-                          style: TextStyle(
-                            color: widget.config.textColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              // Error dialog takes priority over buffering — while retry
+              // is pending the buffering stream can still tick.
+              if (widget.controller.hasError)
+                ReelErrorOverlay(
+                  reel: widget.reel,
+                  config: widget.config,
+                  errorMessage:
+                      widget.controller.errorMessage ?? 'Unknown error occurred',
+                  onRetry: widget.controller.retry,
+                  onCancel: widget.controller.clearError,
+                )
+              else if (widget.controller.isBuffering.value)
+                ReelBufferingIndicator(config: widget.config),
 
               // Play/Pause icon animation
               Obx(() => _showPlayPauseIcon.value
@@ -356,13 +339,20 @@ class _ReelOverlayState extends State<ReelOverlay>
             children: widget.reel.hashtags
                 .map((hashtag) {
                   return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _handleHashtagTap(context, hashtag),
-                    child: Text(
-                      '#$hashtag',
-                      style: TextStyle(
-                        color: widget.config.accentColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        minHeight: widget.config.hashtagMinTapTargetSize,
+                      ),
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '#$hashtag',
+                        style: TextStyle(
+                          color: widget.config.accentColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   );
@@ -447,69 +437,6 @@ class _ReelOverlayState extends State<ReelOverlay>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildErrorOverlay(BuildContext context) {
-    return Container(
-      color: Colors.black54,
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load video',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.controller.errorMessage ?? 'Unknown error occurred',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () => widget.controller.clearError(),
-                    child: Text('Cancel'),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () => widget.controller.retry(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.config.accentColor,
-                    ),
-                    child: Text('Retry'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
