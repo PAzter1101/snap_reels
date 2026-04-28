@@ -31,7 +31,7 @@ Flutter-пакет для создания вертикальных видеол
 
 ```yaml
 dependencies:
-  snap_reels: ^2.2.0
+  snap_reels: ^2.3.1
 ```
 
 ### Требования
