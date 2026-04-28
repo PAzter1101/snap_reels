@@ -41,12 +41,23 @@ class PreloadConfig {
   /// Automatically reduce preload on low-end devices.
   final bool adaptivePreload;
 
+  /// Number of thumbnails to prefetch ahead of the current reel via
+  /// `CacheManager`. Thumbnails are typically 10-150 KB so a wider
+  /// window than [preloadAhead] is cheap. Set to 0 to disable.
+  final int thumbnailPreloadAhead;
+
+  /// Number of thumbnails to prefetch behind the current reel. Set to 0
+  /// to disable.
+  final int thumbnailPreloadBehind;
+
   const PreloadConfig({
     this.preloadAhead = 2,
     this.preloadBehind = 1,
     this.preloadOnWiFiOnly = false,
     this.maxPreloaded = 5,
     this.adaptivePreload = true,
+    this.thumbnailPreloadAhead = 5,
+    this.thumbnailPreloadBehind = 2,
   });
 
   PreloadConfig copyWith({
@@ -55,6 +66,8 @@ class PreloadConfig {
     bool? preloadOnWiFiOnly,
     int? maxPreloaded,
     bool? adaptivePreload,
+    int? thumbnailPreloadAhead,
+    int? thumbnailPreloadBehind,
   }) {
     return PreloadConfig(
       preloadAhead: preloadAhead ?? this.preloadAhead,
@@ -62,6 +75,10 @@ class PreloadConfig {
       preloadOnWiFiOnly: preloadOnWiFiOnly ?? this.preloadOnWiFiOnly,
       maxPreloaded: maxPreloaded ?? this.maxPreloaded,
       adaptivePreload: adaptivePreload ?? this.adaptivePreload,
+      thumbnailPreloadAhead:
+          thumbnailPreloadAhead ?? this.thumbnailPreloadAhead,
+      thumbnailPreloadBehind:
+          thumbnailPreloadBehind ?? this.thumbnailPreloadBehind,
     );
   }
 }

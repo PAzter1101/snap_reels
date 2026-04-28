@@ -165,7 +165,12 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
       );
       return _buildThumbnailFallback();
     }
-    return CachedThumbnail(url: url, fallback: _buildThumbnailFallback());
+    return CachedThumbnail(
+      reel: widget.reel,
+      fallback: _buildThumbnailFallback(),
+      proxyUrlBuilder: widget.config.thumbnailProxyUrlBuilder,
+      loadTimeout: widget.config.thumbnailLoadTimeout,
+    );
   }
 
   Widget _buildThumbnailFallback() {

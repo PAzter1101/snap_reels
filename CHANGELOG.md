@@ -1,3 +1,23 @@
+## 2.3.1
+
+Доводка фичи thumbnail-кэша из 2.3.0: prefetch соседних thumbnail-ов параллельно с видео, hook на host-side fallback URL при сбое первичной загрузки, переиспользование cache-записи между двумя URL'ами одного ресурса.
+
+### Bug Fixes
+- **Thumbnail соседних reels не предзагружался** — в 2.3.0 `CacheManager` инициализировался, но `_preloadAdjacentVideos` тянул в декодер только видео; thumbnail-картинки качались строго в момент mount'а `CachedThumbnail`. На свайпе пользователь видел fallback-плейсхолдер пока шёл сетевой запрос. Теперь `_PreloadManagerMixin` параллельно с видео делает fire-and-forget `CacheManager.downloadAndCache` для thumbnail'ов в окне `[currentIndex − thumbnailPreloadBehind; currentIndex + thumbnailPreloadAhead]`. Дефолт `+5/-2` покрывает типичный burst-свайп без перегрузки disk LRU.
+- **Невозможно было обработать сбой загрузки thumbnail на стороне host'а** — `CachedThumbnail` молча падал в `fallback` widget'у при network/decode error, без шанса на ретрай через альтернативный URL. Добавлены `ReelConfig.thumbnailProxyUrlBuilder` (`String? Function(ReelModel)`) и `ReelConfig.thumbnailLoadTimeout` (default 3 сек): если первичный URL не отдал первый кадр за таймаут или упал — `CachedThumbnail` пересоздаёт future с URL'ом из билдера. Билдер получает `ReelModel`, чтобы host-приложение могло строить URL по `reel.id` (например, через свой бэкенд) без парсинга и URL-encode'а оригинала.
+- **Повторное открытие просмотренного reel заново уходило на сеть** — если первичная загрузка прошла через `thumbnailProxyUrlBuilder`, `cache_index` хранил запись только под fallback-ключом. На повторном mount'е `_resolvePath(primaryUrl)` отдавал cache miss и снова уходил в fallback. Теперь после успеха на fallback URL `CachedThumbnail` зовёт новый `CacheManager.linkCachedUrl(primary, fallback)`, который создаёт alias-запись на тот же `filePath`. Повторный mount отдаёт картинку синхронно из памяти.
+
+### New API
+- **`ReelConfig.thumbnailProxyUrlBuilder`** — `String? Function(ReelModel reel)?`, default `null`. Возврат `null` сохраняет первичный URL.
+- **`ReelConfig.thumbnailLoadTimeout`** — `Duration`, default `3s`. Без эффекта когда `thumbnailProxyUrlBuilder` не задан.
+- **`PreloadConfig.thumbnailPreloadAhead`** / **`thumbnailPreloadBehind`** — `int`, default `5` / `2`. `0/0` отключает prefetch thumbnails полностью.
+- **`CacheManager.linkCachedUrl(aliasUrl, existingUrl)`** — создаёт вторую запись в cache index, ссылающуюся на тот же `filePath`. Файл не копируется.
+
+### Breaking Changes
+- **`CachedThumbnail` конструктор**: параметр `url: String` заменён на `reel: ReelModel`. Виджету теперь нужен полный `ReelModel`, чтобы передать его в `proxyUrlBuilder`. Если в host-приложении использовался `CachedThumbnail(url: ..., fallback: ...)` напрямую (вне `ReelVideoPlayer`) — заменить на `CachedThumbnail(reel: ..., fallback: ...)`. Внутри пакета все вызовы (`reel_video_player`, `reel_error_overlay`) обновлены.
+
+---
+
 ## 2.3.0
 
 ### New Features

@@ -94,6 +94,19 @@ class ReelConfig {
   final Widget Function(BuildContext context, ReelModel reel)?
       thumbnailFallbackBuilder;
 
+  /// Optional URL builder used as a fallback when the primary thumbnail
+  /// URL fails to load or hasn't produced a frame within
+  /// [thumbnailLoadTimeout]. Receives the [ReelModel] so the host can
+  /// build the URL by reel id. Returns the fallback URL or `null` to
+  /// keep the original. When the field itself is `null` (default), no
+  /// fallback retry is attempted.
+  final String? Function(ReelModel reel)? thumbnailProxyUrlBuilder;
+
+  /// Time to wait for the first frame of the primary thumbnail before
+  /// switching to [thumbnailProxyUrlBuilder]. No effect when the builder
+  /// is null. Default 3 seconds.
+  final Duration thumbnailLoadTimeout;
+
   /// Minimum size of the clickable area around each action button
   /// (comment, share, bookmark, download, more). The visual icon stays the
   /// size of [actionIconSize]; only the hit area is expanded via a transparent
@@ -226,6 +239,8 @@ class ReelConfig {
     this.errorDialogBuilder,
     this.bufferingBuilder,
     this.thumbnailFallbackBuilder,
+    this.thumbnailProxyUrlBuilder,
+    this.thumbnailLoadTimeout = const Duration(seconds: 3),
     this.actionMinTapTargetSize = 44,
     this.actionIconSize = 28,
     this.likeButtonSize = 32,
@@ -302,6 +317,8 @@ class ReelConfig {
     Widget Function(BuildContext context)? bufferingBuilder,
     Widget Function(BuildContext context, ReelModel reel)?
         thumbnailFallbackBuilder,
+    String? Function(ReelModel reel)? thumbnailProxyUrlBuilder,
+    Duration? thumbnailLoadTimeout,
     double? actionMinTapTargetSize,
     double? actionIconSize,
     double? likeButtonSize,
@@ -374,6 +391,10 @@ class ReelConfig {
       bufferingBuilder: bufferingBuilder ?? this.bufferingBuilder,
       thumbnailFallbackBuilder:
           thumbnailFallbackBuilder ?? this.thumbnailFallbackBuilder,
+      thumbnailProxyUrlBuilder:
+          thumbnailProxyUrlBuilder ?? this.thumbnailProxyUrlBuilder,
+      thumbnailLoadTimeout:
+          thumbnailLoadTimeout ?? this.thumbnailLoadTimeout,
       actionMinTapTargetSize:
           actionMinTapTargetSize ?? this.actionMinTapTargetSize,
       actionIconSize: actionIconSize ?? this.actionIconSize,

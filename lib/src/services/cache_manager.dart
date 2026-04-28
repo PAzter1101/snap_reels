@@ -193,6 +193,33 @@ class CacheManager {
     }
   }
 
+  /// Add an alias entry pointing to an already-cached file. Used when a
+  /// resource was downloaded via a different URL (e.g. server-side proxy)
+  /// and should also be retrievable by the original URL on subsequent
+  /// lookups via [getCachedFilePath].
+  ///
+  /// No-op if no cache entry exists for [existingUrl] or the alias entry
+  /// already exists. Does not copy the file — both keys reference the
+  /// same path.
+  Future<void> linkCachedUrl(String aliasUrl, String existingUrl) async {
+    if (!_isInitialized) return;
+    final existingKey = _generateCacheKey(existingUrl);
+    final existing = _cacheIndex[existingKey];
+    if (existing == null) return;
+    final aliasKey = _generateCacheKey(aliasUrl);
+    if (_cacheIndex.containsKey(aliasKey)) return;
+    _cacheIndex[aliasKey] = CacheItem(
+      url: aliasUrl,
+      filePath: existing.filePath,
+      cacheKey: aliasKey,
+      fileSize: existing.fileSize,
+      createdAt: existing.createdAt,
+      lastAccessTime: DateTime.now(),
+      expiryTime: existing.expiryTime,
+    );
+    await _saveCacheIndex();
+  }
+
   /// Remove specific URL from cache
   Future<void> removeCachedUrl(String url) async {
     if (!_isInitialized) return;
