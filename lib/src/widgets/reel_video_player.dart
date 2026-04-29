@@ -136,12 +136,12 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _buildThumbnail(),
-          Obx(() {
-            if (_videoController == null || !_hasFirstFrame.value) {
-              return const SizedBox.shrink();
-            }
-            return SizedBox.expand(
+          // Video всегда в дереве: surface texture создаётся в момент
+          // первого build, libmpv получает готовый render sink на старте.
+          // Без этого playback может стопориться через 1–2 секунды на
+          // release-сборке (см. media-kit/media-kit#909).
+          if (_videoController != null)
+            SizedBox.expand(
               child: Video(
                 key: ValueKey(_assignedPlayer.hashCode),
                 controller: _videoController!,
@@ -149,8 +149,13 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
                 fill: Colors.transparent,
                 controls: NoVideoControls,
               ),
-            );
-          }),
+            ),
+          // Thumbnail поверх video, скрывается на первом декодированном кадре.
+          Obx(
+            () => _hasFirstFrame.value
+                ? const SizedBox.shrink()
+                : _buildThumbnail(),
+          ),
           Obx(() => _buildLoadingOverlay()),
         ],
       ),
