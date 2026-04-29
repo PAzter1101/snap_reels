@@ -1,3 +1,10 @@
+## 2.3.3
+
+### Bug Fixes
+- **Streaming-видео зависало через 1–2 секунды без восстановления.** libavformat по умолчанию не переподключается при transient HTTP error / keep-alive close. Перед `player.open()` теперь выставляется набор streaming-tunables: `demuxer-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=2`, `network-timeout=30`, `hwdec=auto-safe`, `force-seekable=yes`, `cache=yes,cache-secs=10`, `demuxer-readahead-secs=20`. См. [media-kit/media-kit#959](https://github.com/media-kit/media-kit/issues/959).
+
+---
+
 ## 2.3.2
 
 ### Bug Fixes

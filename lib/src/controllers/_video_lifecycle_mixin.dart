@@ -100,6 +100,36 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
     final url = _resolveVideoUrl(reel);
     final player = _players[slot];
 
+    // Streaming tunables (см. media-kit/media-kit#959).
+    // setProperty доступен только на native backend (mpv); на web — no-op.
+    final platform = player.platform;
+    if (platform is NativePlayer) {
+      // FFmpeg auto-reconnect: при transient HTTP error / keep-alive close
+      // libavformat выходит в EOF и playback стопорится. Включаем повторное
+      // подключение с экспоненциальным backoff на уровне libavformat.
+      await platform.setProperty(
+        'demuxer-lavf-o',
+        'reconnect=1,'
+            'reconnect_streamed=1,'
+            'reconnect_on_network_error=1,'
+            'reconnect_delay_max=2',
+      );
+      await platform.setProperty('network-timeout', '30');
+      // HW decoding если поддерживается, иначе SW — рекомендованный preset
+      // media_kit для mobile. Снимает зависания на specific форматах,
+      // которые ловит фиксированный hwdec=mediacodec.
+      await platform.setProperty('hwdec', 'auto-safe');
+      // Прогрессивный MP4 без явного `Accept-Ranges` иногда трактуется как
+      // unseekable — ставим явно, чтобы libmpv мог делать range-requests
+      // на восстановлении после reconnect.
+      await platform.setProperty('force-seekable', 'yes');
+      // Readahead-буфер демуксера: 20 сек вперёд снижает шанс попасть
+      // в underrun на первых секундах playback.
+      await platform.setProperty('cache', 'yes');
+      await platform.setProperty('cache-secs', '10');
+      await platform.setProperty('demuxer-readahead-secs', '20');
+    }
+
     // Unmap previous assignment for this slot.
     final prevIndex = _slotToReel[slot];
     if (prevIndex != null) {
