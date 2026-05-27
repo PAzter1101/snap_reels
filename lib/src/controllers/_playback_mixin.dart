@@ -69,18 +69,38 @@ mixin _PlaybackMixin on GetxController, _ReelStateMixin {
     }
   }
 
+  bool _visibilityTarget = true;
+  bool _visibilityRunning = false;
+
   void setVisibility(bool visible) {
     _isVisible.value = visible;
-
-    if (!visible) {
-      pause();
-    } else if (_config.autoPlay) {
-      play();
-    }
+    _visibilityTarget = visible;
+    _drainVisibility();
   }
 
-  void setAppVisibility(bool visible) {
-    setVisibility(visible);
+  void setAppVisibility(bool visible) => setVisibility(visible);
+
+  Future<void> _drainVisibility() async {
+    if (_visibilityRunning) return;
+    _visibilityRunning = true;
+    try {
+      bool? applied;
+      while (applied != _visibilityTarget) {
+        final target = _visibilityTarget;
+        try {
+          if (!target) {
+            await pause();
+          } else if (_config.autoPlay) {
+            await play();
+          }
+        } catch (e) {
+          debugPrint('Visibility command failed: $e');
+        }
+        applied = target;
+      }
+    } finally {
+      _visibilityRunning = false;
+    }
   }
 
   void _updateAccumulatedPlayTime() {

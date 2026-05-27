@@ -12,6 +12,7 @@ mixin _ReelStateMixin on GetxController {
   final RxList<ReelModel> _reelsList = <ReelModel>[].obs;
   int _poolSize = _kDefaultPoolSize;
   final List<Player> _players = [];
+  final List<VideoController> _videoControllers = [];
   final List<List<StreamSubscription>> _slotSubscriptions = [];
 
   // Slot assignment: reel index ↔ pool slot
@@ -86,12 +87,21 @@ mixin _ReelStateMixin on GetxController {
   bool get wasPlayingBeforeSeek => _isPlaying.value;
 
   /// The active Player or null.
-  Player? get currentPlayer =>
-      _activeSlot >= 0 ? _players[_activeSlot] : null;
+  Player? get currentPlayer => _activeSlot >= 0 ? _players[_activeSlot] : null;
 
-  /// media_kit VideoController — created by the Video widget, not the pool.
-  /// Kept for API compatibility; returns null (widgets create their own).
-  VideoController? get currentVideoController => null;
+  /// media_kit VideoController
+  VideoController? get currentVideoController =>
+      _activeSlot >= 0 ? _videoControllers[_activeSlot] : null;
+
+  /// VideoController
+  VideoController? getControllerForReel(ReelModel reel) {
+    _poolVersion.value;
+    final reelIndex = _reels.indexOf(reel);
+    if (reelIndex == -1) return null;
+    final slot = _reelToSlot[reelIndex];
+    if (slot == null) return null;
+    return _videoControllers[slot];
+  }
 
   bool isVideoAlreadyInitialized(int index) {
     return _initializedVideoIndices.containsKey(index) &&

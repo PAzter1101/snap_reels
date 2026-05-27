@@ -6,11 +6,12 @@ part of 'reel_controller.dart';
 /// call receives a serial. If a newer call arrives while an older one is still
 /// in-flight, the older one self-cancels at every `await` checkpoint.
 mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
-  /// Create the fixed pool of 3 Player + VideoController pairs.
+  /// Create the fixed pool of [_poolSize] Player+VideoController pairs.
   void _initializePool() {
     for (int i = 0; i < _poolSize; i++) {
       final player = Player();
       _players.add(player);
+      _videoControllers.add(VideoController(player));
       _slotSubscriptions.add(_subscribeSlot(i));
     }
   }
@@ -190,7 +191,8 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
 
   String _resolveVideoUrl(ReelModel reel) {
     final videoSource = reel.videoSource;
-    if (videoSource != null) return videoSource.getUrlForFormat(VideoFormat.mp4);
+    if (videoSource != null)
+      return videoSource.getUrlForFormat(VideoFormat.mp4);
     final videoUrl = reel.videoUrl;
     if (videoUrl != null) return videoUrl;
     throw Exception('No video source available');
@@ -227,5 +229,6 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
       await player.dispose();
     }
     _players.clear();
+    _videoControllers.clear();
   }
 }

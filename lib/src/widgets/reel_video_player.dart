@@ -19,7 +19,7 @@ class ReelVideoPlayer extends StatefulWidget {
   final ReelController controller;
   final ReelConfig config;
   final Widget Function(BuildContext context, ReelModel reel, String error)?
-      errorBuilder;
+  errorBuilder;
   final Widget Function(BuildContext context, ReelModel reel)? loadingBuilder;
 
   const ReelVideoPlayer({
@@ -67,6 +67,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     _workers.clear();
     _widthSubscription?.cancel();
     _widthSubscription = null;
+    _videoController = null;
     super.dispose();
   }
 
@@ -88,7 +89,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     _widthSubscription = null;
     _hasFirstFrame.value = false;
     _assignedPlayer = player;
-    _videoController = player != null ? VideoController(player) : null;
+    _videoController = widget.controller.getControllerForReel(widget.reel);
     if (player == null) return;
     final initialWidth = player.state.width ?? 0;
     if (initialWidth > 0) {
@@ -165,9 +166,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   Widget _buildThumbnail() {
     final url = widget.reel.thumbnailUrl;
     if (url == null || url.isEmpty) {
-      debugPrint(
-        'ReelVideoPlayer: no thumbnailUrl for reel ${widget.reel.id}',
-      );
+      debugPrint('ReelVideoPlayer: no thumbnailUrl for reel ${widget.reel.id}');
       return _buildThumbnailFallback();
     }
     return CachedThumbnail(
@@ -191,7 +190,8 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
 
     if (widget.controller.hasError) {
       return _buildErrorWidget(
-          widget.controller.errorMessage ?? 'Unknown error');
+        widget.controller.errorMessage ?? 'Unknown error',
+      );
     }
 
     if (widget.controller.isVideoInitializing && _videoController == null) {
@@ -205,9 +205,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     if (widget.loadingBuilder != null) {
       return widget.loadingBuilder!(context, widget.reel);
     }
-    return const Center(
-      child: CircularProgressIndicator(color: Colors.white),
-    );
+    return const Center(child: CircularProgressIndicator(color: Colors.white));
   }
 
   Widget _buildErrorWidget(String error) {
@@ -227,15 +225,20 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
           children: [
             const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 8),
-            const Text('Video Error',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
+            const Text(
+              'Video Error',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(error,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-                textAlign: TextAlign.center),
+            Text(
+              error,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () async {
