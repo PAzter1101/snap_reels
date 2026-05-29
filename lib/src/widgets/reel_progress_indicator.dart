@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -7,7 +9,7 @@ import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
 import 'package:snap_reels/src/utils/reel_utils.dart';
 
-/// Perfect video progress indicator with seeking, thumbnails, and smooth animations
+/// Video progress indicator with seeking, thumbnails, and animations.
 class ReelProgressIndicator extends StatefulWidget {
   const ReelProgressIndicator({
     required this.reel,
@@ -24,7 +26,7 @@ class ReelProgressIndicator extends StatefulWidget {
   final bool showThumb;
   final bool showTime;
   final double height;
-  final Function(Duration)? onSeek;
+  final void Function(Duration)? onSeek;
   final bool showThumbnail;
 
   @override
@@ -302,12 +304,14 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     final newPosition = Duration(
       milliseconds: (tapPosition * duration.inMilliseconds).round(),
     );
-    controller.seekTo(newPosition);
+    unawaited(controller.seekTo(newPosition));
     widget.onSeek?.call(newPosition);
 
-    _scaleAnimationController.forward().then((_) {
-      _scaleAnimationController.reverse();
-    });
+    unawaited(
+      _scaleAnimationController.forward().then((_) {
+        unawaited(_scaleAnimationController.reverse());
+      }),
+    );
   }
 
   void _handlePanStart(DragStartDetails details) {
@@ -316,11 +320,11 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     if (duration.inMilliseconds <= 0) return;
 
     _wasPlayingBeforeDrag = controller.isPlaying.value;
-    if (_wasPlayingBeforeDrag) controller.pause();
+    if (_wasPlayingBeforeDrag) unawaited(controller.pause());
 
     _isDragging.value = true;
-    _thumbAnimationController.forward();
-    _scaleAnimationController.forward();
+    unawaited(_thumbAnimationController.forward());
+    unawaited(_scaleAnimationController.forward());
 
     final box = context.findRenderObject()! as RenderBox;
     final width = box.size.width;
@@ -362,7 +366,7 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
       final newPosition = Duration(
         milliseconds: (_dragValue.value! * duration.inMilliseconds).round(),
       );
-      controller.seekTo(newPosition);
+      unawaited(controller.seekTo(newPosition));
       widget.onSeek?.call(newPosition);
 
       if (_wasPlayingBeforeDrag) {
@@ -374,8 +378,8 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     _dragValue.value = null;
     _showThumbnail.value = false;
     _thumbnailPosition.value = null;
-    _thumbAnimationController.reverse();
-    _scaleAnimationController.reverse();
+    unawaited(_thumbAnimationController.reverse());
+    unawaited(_scaleAnimationController.reverse());
   }
 
   Widget _buildTimeIndicators(Duration position, Duration duration) {

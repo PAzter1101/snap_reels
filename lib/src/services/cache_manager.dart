@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -14,9 +15,9 @@ export '../models/cache_item.dart';
 
 /// Advanced cache manager for video files and thumbnails
 class CacheManager {
+  factory CacheManager() => _instance ??= CacheManager._internal();
   CacheManager._internal();
   static CacheManager? _instance;
-  static CacheManager get instance => _instance ??= CacheManager._internal();
 
   late Dio _dio;
   late Directory _cacheDirectory;
@@ -43,7 +44,8 @@ class CacheManager {
     if (_isInitialized) {
       if (dio != null && !identical(dio, _dio)) {
         debugPrint(
-          'CacheManager: already initialized with a different Dio; keeping the first one',
+          'CacheManager: already initialized with a different Dio; '
+          'keeping the first one',
         );
       }
       return;
@@ -72,7 +74,7 @@ class CacheManager {
   /// Download and cache a file
   Future<String?> downloadAndCache(
     String url, {
-    Function(int received, int total)? onProgress,
+    void Function(int received, int total)? onProgress,
     CancelToken? cancelToken,
   }) async {
     if (!_isInitialized) await initialize();
@@ -95,13 +97,13 @@ class CacheManager {
       final result = await downloadFuture;
       return result;
     } finally {
-      _downloadFutures.remove(url);
+      unawaited(_downloadFutures.remove(url));
     }
   }
 
   Future<String?> _performDownload(
     String url, {
-    Function(int received, int total)? onProgress,
+    void Function(int received, int total)? onProgress,
     CancelToken? cancelToken,
   }) async {
     try {
@@ -117,7 +119,7 @@ class CacheManager {
       );
 
       final file = File(filePath);
-      if (!await file.exists()) {
+      if (!file.existsSync()) {
         throw Exception('Downloaded file does not exist');
       }
 
@@ -187,7 +189,7 @@ class CacheManager {
     try {
       for (final item in _cacheIndex.values) {
         final file = File(item.filePath);
-        if (await file.exists()) {
+        if (file.existsSync()) {
           await file.delete();
         }
       }
@@ -234,7 +236,7 @@ class CacheManager {
 
     if (cacheItem != null) {
       final file = File(cacheItem.filePath);
-      if (await file.exists()) {
+      if (file.existsSync()) {
         await file.delete();
       }
       _cacheIndex.remove(cacheKey);
@@ -257,7 +259,7 @@ class CacheManager {
   Future<void> _loadCacheIndex() async {
     try {
       final file = File('${_cacheDirectory.path}/cache_index.json');
-      if (await file.exists()) {
+      if (file.existsSync()) {
         final json =
             jsonDecode(await file.readAsString()) as Map<String, dynamic>;
         _cacheIndex.clear();
@@ -296,7 +298,7 @@ class CacheManager {
       if (now.isAfter(entry.value.expiryTime)) {
         expiredKeys.add(entry.key);
         final file = File(entry.value.filePath);
-        if (await file.exists()) {
+        if (file.existsSync()) {
           try {
             await file.delete();
           } catch (e) {
@@ -306,9 +308,7 @@ class CacheManager {
       }
     }
 
-    for (final key in expiredKeys) {
-      _cacheIndex.remove(key);
-    }
+    expiredKeys.forEach(_cacheIndex.remove);
 
     if (expiredKeys.isNotEmpty) {
       await _saveCacheIndex();
@@ -334,7 +334,7 @@ class CacheManager {
 
     for (final item in itemsToRemove) {
       final file = File(item.filePath);
-      if (await file.exists()) {
+      if (file.existsSync()) {
         try {
           await file.delete();
         } catch (e) {
@@ -378,12 +378,12 @@ class CacheManager {
     final sorted = _cacheIndex.values.toList()
       ..sort((a, b) => a.lastAccessTime.compareTo(b.lastAccessTime));
 
-    final futures = <Future>[];
+    final futures = <Future<void>>[];
     for (final item in sorted) {
       if (totalSize <= _maxCacheFileSize) break;
       futures.add(() async {
         final file = File(item.filePath);
-        if (await file.exists()) {
+        if (file.existsSync()) {
           await file.delete();
         }
         totalSize -= item.fileSize;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -6,17 +7,14 @@ import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
 import 'package:snap_reels/src/services/cache_manager.dart';
 
-/// Service for handling advanced video streaming with HLS, DASH, and MP4 support.
+/// Service for handling advanced video streaming with HLS, DASH, and MP4.
 ///
 /// Resolves the optimal streaming URL based on platform, network conditions,
 /// and caching state. Players are managed by the ReelController pool.
 class StreamingService {
   factory StreamingService() => _instance;
-
   StreamingService._internal();
   static final StreamingService _instance = StreamingService._internal();
-
-  static StreamingService get instance => _instance;
 
   /// Resolve the best URL for the given reel and streaming config.
   ///
@@ -27,20 +25,18 @@ class StreamingService {
     StreamingConfig config,
   ) async {
     final videoSource = reel.videoSource;
-    if (videoSource == null) {
-      throw Exception('No video source provided');
-    }
-
     final format = await _determineOptimalFormat(videoSource, config);
     final url = videoSource.getUrlForFormat(format);
 
     // Check cache first.
     if (config.enableCaching) {
-      final cachedPath = CacheManager.instance.getCachedFilePath(url);
+      final cachedPath = CacheManager().getCachedFilePath(url);
       if (cachedPath != null) return 'file://$cachedPath';
 
       // Trigger background caching.
-      Future.microtask(() => CacheManager.instance.downloadAndCache(url));
+      unawaited(
+        Future<void>.microtask(() => CacheManager().downloadAndCache(url)),
+      );
     }
 
     return url;

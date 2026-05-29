@@ -41,10 +41,9 @@ const _$VideoFormatEnumMap = {
 
 _ReelModel _$ReelModelFromJson(Map<String, dynamic> json) => _ReelModel(
   id: json['id'] as String,
-  videoUrl: json['videoUrl'] as String?,
-  videoSource: json['videoSource'] == null
-      ? null
-      : VideoSource.fromJson(json['videoSource'] as Map<String, dynamic>),
+  videoSource: VideoSource.fromJson(
+    json['videoSource'] as Map<String, dynamic>,
+  ),
   thumbnailUrl: json['thumbnailUrl'] as String?,
   duration: json['duration'] == null
       ? null
@@ -74,7 +73,6 @@ _ReelModel _$ReelModelFromJson(Map<String, dynamic> json) => _ReelModel(
 Map<String, dynamic> _$ReelModelToJson(_ReelModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'videoUrl': instance.videoUrl,
       'videoSource': instance.videoSource,
       'thumbnailUrl': instance.thumbnailUrl,
       'duration': instance.duration?.inMicroseconds,

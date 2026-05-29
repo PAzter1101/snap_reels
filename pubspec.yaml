@@ -53,3 +53,8 @@ import_sorter:
 flutter:
   assets:
     - assets/reel-loading.json
+  plugin:
+    platforms:
+      android:
+        package: com.pazter1101.snap_reels
+        pluginClass: SnapReelsPlugin

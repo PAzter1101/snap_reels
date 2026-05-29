@@ -29,24 +29,24 @@ void main() {
 
   group('CacheManager', () {
     test('initialize is idempotent', () async {
-      await CacheManager.instance.initialize();
-      await CacheManager.instance.initialize();
-      await CacheManager.instance.initialize(dio: Dio());
+      await CacheManager().initialize();
+      await CacheManager().initialize();
+      await CacheManager().initialize(dio: Dio());
     });
 
     test('public API works after initialize', () async {
-      await CacheManager.instance.initialize();
+      await CacheManager().initialize();
 
       expect(
-        CacheManager.instance.getCachedFilePath('https://example.com/x.mp4'),
+        CacheManager().getCachedFilePath('https://example.com/x.mp4'),
         isNull,
       );
       expect(
-        await CacheManager.instance.isCached('https://example.com/y.mp4'),
+        await CacheManager().isCached('https://example.com/y.mp4'),
         isFalse,
       );
 
-      final stats = await CacheManager.instance.getCacheStats();
+      final stats = await CacheManager().getCacheStats();
       expect(stats.totalSize, greaterThanOrEqualTo(0));
     });
   });

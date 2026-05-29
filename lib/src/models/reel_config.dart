@@ -290,11 +290,11 @@ class ReelConfig {
   final double volume;
   final VoidCallback? onPlay;
   final VoidCallback? onPause;
-  final Function(Duration)? onSeek;
+  final void Function(Duration)? onSeek;
   final double progressBarPadding;
 
-  /// Отступ снизу для всего контента overlay (user info, actions, progress bar).
-  /// Используйте для поднятия контента над tab bar или другими элементами UI.
+  /// Bottom inset for the overlay content (user info, actions, progress
+  /// bar). Use it to lift the content above a tab bar or similar UI.
   final double contentBottomPadding;
 
   ReelConfig copyWith({
@@ -371,7 +371,7 @@ class ReelConfig {
     double? volume,
     VoidCallback? onPlay,
     VoidCallback? onPause,
-    Function(Duration)? onSeek,
+    void Function(Duration)? onSeek,
     double? progressBarPadding,
     double? contentBottomPadding,
   }) {

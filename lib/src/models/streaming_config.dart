@@ -26,7 +26,6 @@ extension PreferredStreamingFormatExtension on PreferredStreamingFormat {
 class StreamingConfig {
   const StreamingConfig({
     this.preferredFormat = PreferredStreamingFormat.auto,
-    this.enableAdaptiveBitrate = true,
     this.enableLowLatency = false,
     this.maxBitrate,
     this.minBitrate,
@@ -44,12 +43,6 @@ class StreamingConfig {
 
   /// Preferred streaming format (default: HLS)
   final PreferredStreamingFormat preferredFormat;
-
-  /// Enable adaptive bitrate streaming.
-  ///
-  /// Not implemented — `video_player` does not expose bitrate control.
-  @Deprecated('Has no effect. Will be removed in v2.0.')
-  final bool enableAdaptiveBitrate;
 
   /// Enable low latency streaming for HLS
   final bool enableLowLatency;
@@ -92,7 +85,6 @@ class StreamingConfig {
 
   StreamingConfig copyWith({
     PreferredStreamingFormat? preferredFormat,
-    bool? enableAdaptiveBitrate,
     bool? enableLowLatency,
     int? maxBitrate,
     int? minBitrate,
@@ -109,8 +101,6 @@ class StreamingConfig {
   }) {
     return StreamingConfig(
       preferredFormat: preferredFormat ?? this.preferredFormat,
-      enableAdaptiveBitrate:
-          enableAdaptiveBitrate ?? this.enableAdaptiveBitrate,
       enableLowLatency: enableLowLatency ?? this.enableLowLatency,
       maxBitrate: maxBitrate ?? this.maxBitrate,
       minBitrate: minBitrate ?? this.minBitrate,

@@ -187,10 +187,15 @@ class ReelUtils {
     return sqrt(widthInches * widthInches + heightInches * heightInches);
   }
 
-  /// Debounce function calls
-  static void debounce(Function() function, Duration delay, [Timer? timer]) {
-    timer?.cancel();
-    timer = Timer(delay, function);
+  /// Debounce function calls. Pass in the previous timer (if any) so it
+  /// can be cancelled, and return the new one so the caller can store it.
+  static Timer debounce(
+    void Function() function,
+    Duration delay, {
+    Timer? previousTimer,
+  }) {
+    previousTimer?.cancel();
+    return Timer(delay, function);
   }
 
   /// Throttle function calls
@@ -218,7 +223,8 @@ class ReelUtils {
 
   /// Convert Color to hex string
   static String colorToHex(Color color) {
-    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
+    final hex = color.toARGB32().toRadixString(16).padLeft(8, '0');
+    return '#${hex.substring(2)}';
   }
 
   /// Calculate luminance of a color
@@ -386,9 +392,11 @@ class ReelUtils {
     if (difference.inDays > 0) {
       return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      final h = difference.inHours;
+      return '$h hour${h == 1 ? '' : 's'} ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      final m = difference.inMinutes;
+      return '$m minute${m == 1 ? '' : 's'} ago';
     } else {
       return 'Just now';
     }

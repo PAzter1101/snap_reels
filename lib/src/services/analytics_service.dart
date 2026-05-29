@@ -8,13 +8,12 @@ import 'package:snap_reels/src/models/reel_analytics.dart';
 
 /// Service for collecting and reporting analytics data
 class AnalyticsService {
+  factory AnalyticsService() => _instance ??= AnalyticsService._internal();
   AnalyticsService._internal();
   static AnalyticsService? _instance;
-  static AnalyticsService get instance =>
-      _instance ??= AnalyticsService._internal();
 
   bool _isEnabled = false;
-  DeviceInfo? _deviceInfo;
+  late DeviceInfo _deviceInfo;
   final Map<String, ReelAnalytics> _activeAnalytics = {};
   final List<ReelAnalytics> _pendingAnalytics = [];
 
@@ -51,7 +50,7 @@ class AnalyticsService {
       sessionId: sessionId,
       reelId: reelId,
       userId: userId,
-      deviceInfo: _deviceInfo!,
+      deviceInfo: _deviceInfo,
       performanceMetrics: const PerformanceMetrics(),
       sessionStartTime: DateTime.now(),
     );
@@ -200,7 +199,11 @@ class AnalyticsService {
   }
 
   /// Track like action
-  void trackLike(String reelId, Duration videoPosition, bool isLiked) {
+  void trackLike(
+    String reelId,
+    Duration videoPosition, {
+    required bool isLiked,
+  }) {
     trackInteractionEvent(
       reelId,
       isLiked ? InteractionEventType.like : InteractionEventType.unlike,
@@ -230,7 +233,11 @@ class AnalyticsService {
   }
 
   /// Track follow action
-  void trackFollow(String reelId, Duration videoPosition, bool isFollowing) {
+  void trackFollow(
+    String reelId,
+    Duration videoPosition, {
+    required bool isFollowing,
+  }) {
     trackInteractionEvent(
       reelId,
       isFollowing ? InteractionEventType.follow : InteractionEventType.unfollow,
@@ -423,7 +430,12 @@ class AnalyticsService {
             totalTime += event.timestamp.difference(playStartTime);
             playStartTime = null;
           }
-        default:
+        case PlaybackEventType.seeked:
+        case PlaybackEventType.buffering:
+        case PlaybackEventType.error:
+        case PlaybackEventType.qualityChanged:
+        case PlaybackEventType.volumeChanged:
+        case PlaybackEventType.speedChanged:
           break;
       }
     }
@@ -500,7 +512,7 @@ class AnalyticsService {
   }
 
   /// Enable or disable analytics
-  void setEnabled(bool enabled) {
+  void setEnabled({required bool enabled}) {
     _isEnabled = enabled;
     if (!enabled) {
       _activeAnalytics.clear();

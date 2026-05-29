@@ -3,7 +3,7 @@ part of 'reel_controller.dart';
 /// Manages preloading of adjacent videos via slot recycling.
 ///
 /// With a fixed pool of 3 players there is no disposal — the farthest
-/// slot is recycled with [player.open] for the new video.
+/// slot is recycled for the new video.
 mixin _PreloadManagerMixin
     on GetxController, _ReelStateMixin, _VideoLifecycleMixin {
   /// Ensure prev/current/next are loaded in the pool.
@@ -17,7 +17,7 @@ mixin _PreloadManagerMixin
 
     // Previous video (lower priority, no await).
     if (preload.preloadBehind > 0 && currentIndex > 0) {
-      _preloadVideo(currentIndex - 1);
+      unawaited(_preloadVideo(currentIndex - 1));
     }
 
     _preloadAdjacentThumbnails(currentIndex);
@@ -25,12 +25,13 @@ mixin _PreloadManagerMixin
 
   /// Fire-and-forget prefetch of thumbnails for the upcoming and recently
   /// passed reels. Goes through [CacheManager] so the next mount of
-  /// [CachedThumbnail] for those reels hits disk cache instantly.
+  /// `CachedThumbnail` for those reels hits disk cache instantly.
   ///
   /// Honours [ReelConfig.thumbnailProxyUrlBuilder]: if set, the proxy URL
   /// is downloaded and aliased back to the primary URL key in the cache
-  /// — so [CachedThumbnail] still queries by primary URL on mount and
-  /// gets the cached file without waiting for [thumbnailLoadTimeout].
+  /// — so `CachedThumbnail` still queries by primary URL on mount and
+  /// gets the cached file without waiting for
+  /// [ReelConfig.thumbnailLoadTimeout].
   void _preloadAdjacentThumbnails(int currentIndex) {
     final preload = _effectivePreloadConfig ?? _config.preloadConfig;
     final ahead = preload.thumbnailPreloadAhead;
@@ -43,7 +44,7 @@ mixin _PreloadManagerMixin
       final reel = _reels[i];
       final primary = reel.thumbnailUrl;
       if (primary == null || primary.isEmpty) continue;
-      if (CacheManager.instance.getCachedFilePath(primary) != null) continue;
+      if (CacheManager().getCachedFilePath(primary) != null) continue;
       unawaited(_prefetchThumbnail(reel, primary));
     }
   }
@@ -51,9 +52,9 @@ mixin _PreloadManagerMixin
   Future<void> _prefetchThumbnail(ReelModel reel, String primary) async {
     final proxyUrl = _config.thumbnailProxyUrlBuilder?.call(reel);
     final url = proxyUrl ?? primary;
-    final path = await CacheManager.instance.downloadAndCache(url);
+    final path = await CacheManager().downloadAndCache(url);
     if (path != null && proxyUrl != null && proxyUrl != primary) {
-      await CacheManager.instance.linkCachedUrl(primary, proxyUrl);
+      await CacheManager().linkCachedUrl(primary, proxyUrl);
     }
   }
 
@@ -77,13 +78,13 @@ mixin _PreloadManagerMixin
     debugPrint('snap_reels: memory pressure — stopping non-active players');
     for (var i = 0; i < _players.length; i++) {
       if (i == _activeSlot) continue;
-      _players[i].stop();
+      unawaited(_players[i].stop());
       final reelIndex = _slotToReel.remove(i);
       if (reelIndex != null) {
         _reelToSlot.remove(reelIndex);
         _initializedVideoIndices.remove(reelIndex);
       }
     }
-    CacheManager.instance.clearMemoryCache();
+    CacheManager().clearMemoryCache();
   }
 }

@@ -60,15 +60,9 @@ abstract class VideoSource with _$VideoSource {
 /// A single reel item with all its metadata.
 @freezed
 abstract class ReelModel with _$ReelModel {
-  @Assert(
-    'videoUrl != null || videoSource != null',
-    'Either videoUrl or videoSource must be provided',
-  )
   const factory ReelModel({
     required String id,
-    @Deprecated('Use videoSource instead for better streaming support')
-    String? videoUrl,
-    VideoSource? videoSource,
+    required VideoSource videoSource,
     String? thumbnailUrl,
     Duration? duration,
     ReelUser? user,
@@ -249,27 +243,16 @@ abstract class ReelModel with _$ReelModel {
   /// Music title pulled from the optional [audio] block.
   String? get musicTitle => audio?.title;
 
-  /// Convenience getter for the playable URL, transparently honouring the
-  /// deprecated [videoUrl] when no [videoSource] is set.
-  // ignore: deprecated_member_use_from_same_package
-  String get effectiveVideoUrl => videoSource?.url ?? (videoUrl ?? '');
-
-  /// Effective format derived from [videoSource], defaulting to MP4 for
-  /// legacy [videoUrl]-only reels.
-  VideoFormat get videoFormat => videoSource?.format ?? VideoFormat.mp4;
+  /// Format of the primary video source.
+  VideoFormat get videoFormat => videoSource.format;
 
   /// Whether this reel can serve the given [format].
-  bool hasStreamingFormat(VideoFormat format) =>
-      videoSource?.hasFormat(format) ??
-      // ignore: deprecated_member_use_from_same_package
-      (format == VideoFormat.mp4 && videoUrl != null);
+  bool hasStreamingFormat(VideoFormat format) => videoSource.hasFormat(format);
 
   /// Returns the URL for [format] when available, otherwise null.
-  String? getUrlForFormat(VideoFormat format) {
-    if (videoSource != null) return videoSource!.getUrlForFormat(format);
-    // ignore: deprecated_member_use_from_same_package
-    return format == VideoFormat.mp4 ? videoUrl : null;
-  }
+  String? getUrlForFormat(VideoFormat format) => videoSource.hasFormat(format)
+      ? videoSource.getUrlForFormat(format)
+      : null;
 }
 
 /// User information attached to a reel.

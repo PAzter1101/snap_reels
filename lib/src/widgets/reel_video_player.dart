@@ -49,7 +49,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    _initializeVideo();
+    unawaited(_initializeVideo());
     _workers = [
       ever<int>(widget.controller.poolVersion, (_) {
         if (mounted) _syncPlayer();
@@ -66,7 +66,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
       w.dispose();
     }
     _workers.clear();
-    _widthSubscription?.cancel();
+    unawaited(_widthSubscription?.cancel());
     _widthSubscription = null;
     _videoController = null;
     super.dispose();
@@ -86,7 +86,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   /// widget renders a solid black background during load/error, occluding
   /// the thumbnail the whole time.
   void _attachPlayer(Player? player) {
-    _widthSubscription?.cancel();
+    unawaited(_widthSubscription?.cancel());
     _widthSubscription = null;
     _hasFirstFrame.value = false;
     _assignedPlayer = player;
@@ -134,7 +134,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
 
     return VisibilityDetector(
       key: Key('reel_${widget.reel.id}'),
-      onVisibilityChanged: _onVisibilityChanged,
+      onVisibilityChanged: (info) => unawaited(_onVisibilityChanged(info)),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -152,7 +152,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
                 controls: null,
               ),
             ),
-          // Thumbnail sits above the video and hides on the first decoded frame.
+          // Thumbnail sits above the video; hidden on the first decoded frame.
           Obx(
             () => _hasFirstFrame.value
                 ? const SizedBox.shrink()
@@ -259,19 +259,19 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     );
   }
 
-  void _onVisibilityChanged(VisibilityInfo info) {
+  Future<void> _onVisibilityChanged(VisibilityInfo info) async {
     final wasVisible = _isVisible.value;
     _isVisible.value = info.visibleFraction > 0.5;
 
     if (_isVisible.value && !wasVisible) {
-      _initializeVideo();
+      await _initializeVideo();
       _syncPlayer();
       if (widget.controller.isReelActive(widget.reel)) {
-        widget.controller.play();
+        await widget.controller.play();
       }
     } else if (!_isVisible.value && wasVisible) {
       if (widget.controller.isReelActive(widget.reel)) {
-        widget.controller.pause();
+        await widget.controller.pause();
       }
     }
   }

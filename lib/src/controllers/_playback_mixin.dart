@@ -72,13 +72,14 @@ mixin _PlaybackMixin on GetxController, _ReelStateMixin {
   bool _visibilityTarget = true;
   bool _visibilityRunning = false;
 
-  void setVisibility(bool visible) {
+  void setVisibility({required bool visible}) {
     _isVisible.value = visible;
     _visibilityTarget = visible;
-    _drainVisibility();
+    unawaited(_drainVisibility());
   }
 
-  void setAppVisibility(bool visible) => setVisibility(visible);
+  void setAppVisibility({required bool visible}) =>
+      setVisibility(visible: visible);
 
   Future<void> _drainVisibility() async {
     if (_visibilityRunning) return;

@@ -29,8 +29,8 @@ dart fix --apply
 step "dart run import_sorter:main --no-comments"
 dart run import_sorter:main --no-comments
 
-step "dart run tools/sort_pubspec.dart"
-dart run tools/sort_pubspec.dart
+step "dart run tool/sort_pubspec.dart"
+dart run tool/sort_pubspec.dart
 
 step "dart format lib test"
 dart format lib test

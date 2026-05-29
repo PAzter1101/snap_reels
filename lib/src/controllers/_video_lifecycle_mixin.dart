@@ -17,7 +17,7 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
   }
 
   /// Set up stream listeners for a pool slot. Listeners live until dispose.
-  List<StreamSubscription> _subscribeSlot(int slot) {
+  List<StreamSubscription<dynamic>> _subscribeSlot(int slot) {
     final player = _players[slot];
     return [
       player.stream.position.listen((pos) {
@@ -59,7 +59,7 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
     // Fast path: reel is already loaded in a slot.
     final existingSlot = _reelToSlot[currentIndex];
     if (existingSlot != null) {
-      _switchToSlot(existingSlot);
+      _activeSlot = existingSlot;
       await _startPlayback();
       _poolVersion.value++;
       return;
@@ -81,7 +81,7 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
       await _openSlot(slot, currentReel);
       if (_initSerial != expectedSerial) return;
 
-      _switchToSlot(slot);
+      _activeSlot = slot;
       _initializedVideoIndices[currentIndex] = true;
 
       await _startPlayback();
@@ -147,10 +147,6 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
     _initializedVideoIndices[reelIndex] = true;
   }
 
-  void _switchToSlot(int slot) {
-    _activeSlot = slot;
-  }
-
   Future<void> _startPlayback() async {
     if (_activeSlot < 0 || _activeSlot >= _players.length) return;
     if (_isDisposed.value) return;
@@ -186,15 +182,8 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
     return farthestSlot;
   }
 
-  String _resolveVideoUrl(ReelModel reel) {
-    final videoSource = reel.videoSource;
-    if (videoSource != null) {
-      return videoSource.getUrlForFormat(VideoFormat.mp4);
-    }
-    final videoUrl = reel.videoUrl;
-    if (videoUrl != null) return videoUrl;
-    throw Exception('No video source available');
-  }
+  String _resolveVideoUrl(ReelModel reel) =>
+      reel.videoSource.getUrlForFormat(VideoFormat.mp4);
 
   /// Stop all players and clear slot assignments without destroying the pool.
   /// Used on re-initialization to avoid dispose/recreate races.

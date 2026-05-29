@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -9,7 +11,7 @@ import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
 import 'package:snap_reels/src/utils/reel_utils.dart';
 
-/// Widget that displays action buttons (like, comment, share, etc.) on the right side
+/// Right-side action stack: like, comment, share, etc.
 class ReelActions extends StatefulWidget {
   const ReelActions({
     required this.reel,
@@ -256,16 +258,16 @@ class _ReelActionsState extends State<ReelActions>
     if (!widget.reel.isLiked && mounted) {
       _showFloatingHeart();
     }
-    if (widget.onLike != null) widget.onLike!();
+    widget.onLike?.call();
   }
 
   void _handleComment(ReelController controller) {
     if (widget.config.onCommentTap != null) {
       widget.config.onCommentTap!(widget.reel);
     } else {
-      _showCommentsBottomSheet(context, controller);
+      unawaited(_showCommentsBottomSheet(context, controller));
     }
-    if (widget.onComment != null) widget.onComment!();
+    widget.onComment?.call();
   }
 
   void _handleShare(ReelController controller) {
@@ -275,10 +277,9 @@ class _ReelActionsState extends State<ReelActions>
       widget.config.onShareTap!(widget.reel);
     } else {
       // Default share implementation - can be customized by the app
-      final url = widget.reel.videoSource?.url ?? widget.reel.videoUrl;
-      debugPrint('Sharing reel: $url');
+      debugPrint('Sharing reel: ${widget.reel.videoSource.url}');
     }
-    if (widget.onShare != null) widget.onShare!();
+    widget.onShare?.call();
   }
 
   void _handleBookmark(ReelController controller) {
@@ -354,212 +355,235 @@ class _ReelActionsState extends State<ReelActions>
 
     overlay.insert(overlayEntry);
 
-    animationController.forward().then((_) {
-      overlayEntry.remove();
-      animationController.dispose();
-    });
+    unawaited(
+      animationController.forward().then((_) {
+        overlayEntry.remove();
+        animationController.dispose();
+      }),
+    );
   }
 
-  void _showCommentsBottomSheet(
+  Future<void> _showCommentsBottomSheet(
     BuildContext context,
     ReelController controller,
-  ) {
+  ) async {
     final commentController = TextEditingController();
     final commentFocusNode = FocusNode();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          maxChildSize: 0.9,
-          minChildSize: 0.3,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.blueGrey[900],
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            maxChildSize: 0.9,
+            minChildSize: 0.3,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey[900],
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  // Handle bar
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    height: 4,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+                child: Column(
+                  children: [
+                    // Handle bar
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      height: 4,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Comments',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const Spacer(),
-                        Text(
-                          ReelUtils.formatCount(widget.reel.commentsCount),
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  // Comments list
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: 10, // Placeholder
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Comments',
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: widget.config.accentColor,
-                                child: Text(
-                                  'U${index + 1}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
+                          const Spacer(),
+                          Text(
+                            ReelUtils.formatCount(widget.reel.commentsCount),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    // Comments list
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: 10, // Placeholder
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: widget.config.accentColor,
+                                  child: Text(
+                                    'U${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'user${index + 1}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '2h',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Sample comment #${index + 1}. '
+                                        'Great content!',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Reply',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'user${index + 1}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '2h',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.favorite_border,
+                                        size: 18,
+                                        color: Colors.grey[600],
+                                      ),
+                                      onPressed: () {},
                                     ),
-                                    const SizedBox(height: 4),
                                     Text(
-                                      'This is a sample comment #${index + 1}. Great content!',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Reply',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                                      '${index + 1}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Column(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.favorite_border,
-                                      size: 18,
-                                      color: Colors.grey[600],
-                                    ),
-                                    onPressed: () {},
-                                  ),
-                                  Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  // Comment input
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: Colors.grey[300]!),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: widget.config.accentColor,
-                          child: const Icon(
-                            Icons.person,
-                            size: 18,
-                            color: Colors.white,
-                          ),
+                    // Comment input
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.grey[300]!),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: commentController,
-                            focusNode: commentFocusNode,
-                            decoration: InputDecoration(
-                              hintText: 'Add a comment...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide.none,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[100],
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: widget.config.accentColor,
+                            child: const Icon(
+                              Icons.person,
+                              size: 18,
+                              color: Colors.white,
                             ),
-                            maxLines: null,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (text) {
-                              if (text.trim().isNotEmpty) {
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: commentController,
+                              focusNode: commentFocusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Add a comment...',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                              ),
+                              maxLines: null,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (text) {
+                                if (text.trim().isNotEmpty) {
+                                  // Handle comment submission
+                                  commentController.clear();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('Comment posted!'),
+                                      backgroundColor:
+                                          widget.config.accentColor,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              final text = commentController.text.trim();
+                              if (text.isNotEmpty) {
                                 // Handle comment submission
                                 commentController.clear();
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -570,121 +594,110 @@ class _ReelActionsState extends State<ReelActions>
                                 );
                               }
                             },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            final text = commentController.text.trim();
-                            if (text.isNotEmpty) {
-                              // Handle comment submission
-                              commentController.clear();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Comment posted!'),
-                                  backgroundColor: widget.config.accentColor,
-                                ),
-                              );
-                            }
-                          },
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundColor: widget.config.accentColor,
-                            child: const Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 18,
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: widget.config.accentColor,
+                              child: const Icon(
+                                Icons.send,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      commentController.dispose();
+      commentFocusNode.dispose();
+    }
   }
 
   void _showMoreOptions(BuildContext context, ReelController controller) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Bookmark in more menu
-              if (widget.config.showBookmarkButton &&
-                  widget.config.bookmarkInMoreMenu)
-                ListTile(
-                  leading: Icon(
-                    widget.reel.isBookmarked
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                  ),
-                  title: Text(
-                    widget.reel.isBookmarked
-                        ? 'Remove bookmark'
-                        : 'Add bookmark',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleBookmark(controller);
-                  },
-                ),
-              // Download in more menu
-              if (widget.config.showDownloadButton &&
-                  widget.config.downloadInMoreMenu)
-                ListTile(
-                  leading: const Icon(Icons.download),
-                  title: const Text('Download'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleDownload(controller);
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.report),
-                title: Text(widget.config.reportLabel),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleReport(controller);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: Text(widget.config.blockLabel),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleBlock(controller);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.link),
-                title: Text(widget.config.copyLinkLabel),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleCopyLink(controller);
-                },
-              ),
-              if (widget.config.customActions.isNotEmpty)
-                ...widget.config.customActions.map(
-                  (action) => ListTile(
-                    leading: Icon(action.icon),
-                    title: Text(action.title),
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (context) => SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Bookmark in more menu
+                if (widget.config.showBookmarkButton &&
+                    widget.config.bookmarkInMoreMenu)
+                  ListTile(
+                    leading: Icon(
+                      widget.reel.isBookmarked
+                          ? Icons.bookmark
+                          : Icons.bookmark_border,
+                    ),
+                    title: Text(
+                      widget.reel.isBookmarked
+                          ? 'Remove bookmark'
+                          : 'Add bookmark',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
-                      action.onTap(widget.reel);
+                      _handleBookmark(controller);
                     },
                   ),
+                // Download in more menu
+                if (widget.config.showDownloadButton &&
+                    widget.config.downloadInMoreMenu)
+                  ListTile(
+                    leading: const Icon(Icons.download),
+                    title: const Text('Download'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleDownload(controller);
+                    },
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.report),
+                  title: Text(widget.config.reportLabel),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleReport(controller);
+                  },
                 ),
-            ],
+                ListTile(
+                  leading: const Icon(Icons.block),
+                  title: Text(widget.config.blockLabel),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleBlock(controller);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.link),
+                  title: Text(widget.config.copyLinkLabel),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleCopyLink(controller);
+                  },
+                ),
+                if (widget.config.customActions.isNotEmpty)
+                  ...widget.config.customActions.map(
+                    (action) => ListTile(
+                      leading: Icon(action.icon),
+                      title: Text(action.title),
+                      onTap: () {
+                        Navigator.pop(context);
+                        action.onTap(widget.reel);
+                      },
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -715,7 +728,7 @@ class _ReelActionsState extends State<ReelActions>
         ),
       );
     }
-    if (widget.onBlock != null) widget.onBlock!();
+    widget.onBlock?.call();
   }
 
   void _handleCopyLink(ReelController controller) {

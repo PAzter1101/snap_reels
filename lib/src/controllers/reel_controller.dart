@@ -7,14 +7,10 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import 'package:snap_reels/snap_reels.dart' show CachedThumbnail;
 import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
 import 'package:snap_reels/src/services/cache_manager.dart';
 import 'package:snap_reels/src/utils/device_classifier.dart';
-
-import 'package:snap_reels/src/widgets/cached_thumbnail.dart'
-    show CachedThumbnail;
 
 part '_playback_mixin.dart';
 part '_preload_manager_mixin.dart';
@@ -65,7 +61,7 @@ class ReelController extends GetxController
 
       if (_config.enableCaching) {
         try {
-          await CacheManager.instance.initialize(
+          await CacheManager().initialize(
             dio: _config.httpClient,
             config: _config.cacheConfig,
           );
@@ -108,10 +104,10 @@ class ReelController extends GetxController
       _pageController = PageController(initialPage: _currentIndex.value);
 
       await _initializeCurrentVideo();
-      _preloadAdjacentVideos(_currentIndex.value);
+      unawaited(_preloadAdjacentVideos(_currentIndex.value));
 
       _isInitialized.value = true;
-      WakelockPlus.enable();
+      unawaited(WakelockPlus.enable());
 
       debugPrint('ReelController initialized with ${_reels.length} reels');
     } catch (e) {
@@ -141,7 +137,7 @@ class ReelController extends GetxController
 
     _preloadDebounce?.cancel();
     _preloadDebounce = Timer(const Duration(milliseconds: 200), () {
-      _preloadAdjacentVideos(index);
+      unawaited(_preloadAdjacentVideos(index));
     });
   }
 
@@ -206,7 +202,7 @@ class ReelController extends GetxController
         curve: Curves.easeInOut,
       );
       if (i < repeats - 1) {
-        await Future.delayed(pauseBetween);
+        await Future<void>.delayed(pauseBetween);
       }
     }
   }
@@ -251,29 +247,38 @@ class ReelController extends GetxController
 
   // --- Lifecycle ---
 
+  /// Releases native player resources and waits for cleanup to finish.
+  ///
+  /// Prefer this over relying on [dispose] when the surrounding code
+  /// reallocates a [ReelController] (or any other libmpv-backed widget)
+  /// immediately after teardown — Flutter's [dispose] is synchronous and
+  /// cannot wait for native handles to be returned to the OS, so chaining
+  /// teardown + setup back-to-back can briefly double native memory use.
+  Future<void> close() async {
+    if (_isDisposed.value) return;
+    _isDisposed.value = true;
+    _preloadDebounce?.cancel();
+    _updateAccumulatedPlayTime();
+
+    await _disposePool();
+
+    _pageController?.dispose();
+    _pageController = null;
+
+    await WakelockPlus.disable();
+  }
+
   @override
-  void onClose() {
-    dispose();
+  Future<void> onClose() async {
+    await close();
     super.onClose();
   }
 
   @override
   void dispose() {
-    if (_isDisposed.value) return;
-
-    _isDisposed.value = true;
-    _preloadDebounce?.cancel();
-    _updateAccumulatedPlayTime();
-
-    _disposePool();
-
-    _pageController?.dispose();
-    _pageController = null;
-
-    WakelockPlus.disable();
-
-    debugPrint('ReelController disposed');
-
+    if (!_isDisposed.value) {
+      unawaited(close());
+    }
     super.dispose();
   }
 }

@@ -13,7 +13,7 @@ mixin _ReelStateMixin on GetxController {
   int _poolSize = _kDefaultPoolSize;
   final List<Player> _players = [];
   final List<VideoController> _videoControllers = [];
-  final List<List<StreamSubscription>> _slotSubscriptions = [];
+  final List<List<StreamSubscription<dynamic>>> _slotSubscriptions = [];
 
   // Slot assignment: reel index ↔ pool slot
   final Map<int, int> _reelToSlot = {};

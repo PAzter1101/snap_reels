@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -11,7 +13,7 @@ import 'package:snap_reels/src/widgets/reel_buffering_indicator.dart';
 import 'package:snap_reels/src/widgets/reel_error_overlay.dart';
 import 'package:snap_reels/src/widgets/reel_progress_indicator.dart';
 
-/// Overlay widget that displays over the video with user info, actions, and controls
+/// Overlay shown over the video with user info, actions, and controls.
 class ReelOverlay extends StatefulWidget {
   const ReelOverlay({
     required this.reel,
@@ -80,28 +82,30 @@ class _ReelOverlayState extends State<ReelOverlay>
 
   void _handleLongPressStart() {
     _wasPlayingBeforeLongPress = widget.controller.isPlaying.value;
-    widget.controller.pause();
+    unawaited(widget.controller.pause());
   }
 
   void _handleLongPressEnd() {
     if (_wasPlayingBeforeLongPress) {
-      widget.controller.play();
+      unawaited(widget.controller.play());
     }
   }
 
   void _togglePlayPause() {
     if (widget.controller.isPlaying.value) {
-      widget.controller.pause();
+      unawaited(widget.controller.pause());
     } else {
-      widget.controller.play();
+      unawaited(widget.controller.play());
     }
     _showPlayPauseIcon.value = true;
-    _playPauseAnimationController.forward().then((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _showPlayPauseIcon.value = false;
-        _playPauseAnimationController.reverse();
-      });
-    });
+    unawaited(
+      _playPauseAnimationController.forward().then((_) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _showPlayPauseIcon.value = false;
+          unawaited(_playPauseAnimationController.reverse());
+        });
+      }),
+    );
   }
 
   @override
@@ -239,9 +243,7 @@ class _ReelOverlayState extends State<ReelOverlay>
                     reel: widget.reel,
                     config: widget.config,
                     onSeek: (position) {
-                      if (widget.config.onSeek != null) {
-                        widget.config.onSeek!(position);
-                      }
+                      widget.config.onSeek?.call(position);
                     },
                   ),
                 ),
@@ -466,9 +468,6 @@ class _ReelOverlayState extends State<ReelOverlay>
   }
 
   void _handleHashtagTap(BuildContext context, String hashtag) {
-    // Navigate to hashtag page or trigger callback
-    if (widget.config.onHashtagTap != null) {
-      widget.config.onHashtagTap!(hashtag);
-    }
+    widget.config.onHashtagTap?.call(hashtag);
   }
 }

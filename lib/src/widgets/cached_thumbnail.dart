@@ -95,9 +95,9 @@ class _CachedThumbnailState extends State<CachedThumbnail> {
 
   Future<String?> _resolvePath(String url) async {
     if (url.isEmpty) return null;
-    final cached = CacheManager.instance.getCachedFilePath(url);
+    final cached = CacheManager().getCachedFilePath(url);
     if (cached != null) return cached;
-    final downloaded = await CacheManager.instance.downloadAndCache(url);
+    final downloaded = await CacheManager().downloadAndCache(url);
     if (downloaded == null) {
       debugPrint('CachedThumbnail: download failed for $url');
     }
@@ -110,7 +110,7 @@ class _CachedThumbnailState extends State<CachedThumbnail> {
   Future<String?> _resolveProxy(String proxyUrl) async {
     final path = await _resolvePath(proxyUrl);
     if (path != null && _primaryUrl.isNotEmpty) {
-      await CacheManager.instance.linkCachedUrl(_primaryUrl, proxyUrl);
+      await CacheManager().linkCachedUrl(_primaryUrl, proxyUrl);
     }
     return path;
   }

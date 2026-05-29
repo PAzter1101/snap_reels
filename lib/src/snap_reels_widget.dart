@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -56,7 +58,7 @@ class SnapReels extends StatefulWidget {
   final void Function(ReelModel reel, Duration position)? onLongPress;
 
   /// Callback when like button tapped
-  final void Function(ReelModel reel, bool isLiked)? onLikeTapped;
+  final void Function(ReelModel reel, {required bool isLiked})? onLikeTapped;
 
   /// Callback when comment button tapped
   final void Function(ReelModel reel)? onCommentTapped;
@@ -65,7 +67,8 @@ class SnapReels extends StatefulWidget {
   final void Function(ReelModel reel)? onShareTapped;
 
   /// Callback when follow button tapped
-  final void Function(ReelModel reel, bool isFollowing)? onFollowTapped;
+  final void Function(ReelModel reel, {required bool isFollowing})?
+  onFollowTapped;
 
   /// Callback when user profile tapped
   final void Function(ReelModel reel)? onUserProfileTapped;
@@ -119,7 +122,7 @@ class _SnapReelsState extends State<SnapReels>
       _controller = Get.put(ReelController(), permanent: true);
     }
     if (!_controller.isInitialized.value) {
-      _initializeController();
+      unawaited(_initializeController());
     }
   }
 
@@ -129,13 +132,13 @@ class _SnapReelsState extends State<SnapReels>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _controller.setAppVisibility(true);
+        _controller.setAppVisibility(visible: true);
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
-        _controller.setAppVisibility(false);
+        _controller.setAppVisibility(visible: false);
       case AppLifecycleState.hidden:
-        _controller.setAppVisibility(false);
+        _controller.setAppVisibility(visible: false);
     }
   }
 
@@ -151,7 +154,7 @@ class _SnapReelsState extends State<SnapReels>
 
     // Reinitialize if reels or config changed
     if (widget.reels != oldWidget.reels || widget.config != oldWidget.config) {
-      _initializeController();
+      unawaited(_initializeController());
     }
   }
 
@@ -200,10 +203,8 @@ class _SnapReelsState extends State<SnapReels>
       physics: widget.config.physics,
       itemCount: widget.reels.length,
       onPageChanged: (index) {
-        _controller.onPageChanged(index);
-        if (widget.onReelChanged != null) {
-          widget.onReelChanged!(index);
-        }
+        unawaited(_controller.onPageChanged(index));
+        widget.onReelChanged?.call(index);
       },
       itemBuilder: (context, index) {
         if (index >= widget.reels.length) return const SizedBox.shrink();
@@ -223,9 +224,7 @@ class _SnapReelsState extends State<SnapReels>
           controller: _controller,
           config: widget.config,
           errorBuilder: (context, reel, error) {
-            if (widget.onVideoError != null) {
-              widget.onVideoError!(reel, error);
-            }
+            widget.onVideoError?.call(reel, error);
             return widget.errorBuilder?.call(context, reel, error) ??
                 const SizedBox.shrink();
           },
@@ -272,7 +271,7 @@ extension SnapReelsExtension on SnapReels {
     final reels = videoUrls.asMap().entries.map((entry) {
       return ReelModel(
         id: 'reel_${entry.key}_${DateTime.now().millisecondsSinceEpoch}',
-        videoUrl: entry.value, // kept for backward compatibility
+        videoSource: VideoSource(url: entry.value),
       );
     }).toList();
 
