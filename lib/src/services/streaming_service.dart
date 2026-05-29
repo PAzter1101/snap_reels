@@ -12,6 +12,7 @@ import 'package:snap_reels/src/services/cache_manager.dart';
 /// Resolves the optimal streaming URL based on platform, network conditions,
 /// and caching state. Players are managed by the ReelController pool.
 class StreamingService {
+  /// Returns the singleton instance.
   factory StreamingService() => _instance;
   StreamingService._internal();
   static final StreamingService _instance = StreamingService._internal();
@@ -116,6 +117,4 @@ class StreamingService {
       return [VideoFormat.mp4];
     }
   }
-
-  void dispose() {}
 }

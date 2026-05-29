@@ -17,6 +17,7 @@ import 'package:snap_reels/src/widgets/cached_thumbnail.dart';
 /// Creates its own [VideoController] for the [Player] from the pool.
 /// Verifies on every build that the player still belongs to this reel.
 class ReelVideoPlayer extends StatefulWidget {
+  /// Creates a player view bound to [reel] and [controller].
   const ReelVideoPlayer({
     required this.reel,
     required this.controller,
@@ -25,11 +26,21 @@ class ReelVideoPlayer extends StatefulWidget {
     this.errorBuilder,
     this.loadingBuilder,
   });
+
+  /// Reel rendered by this player.
   final ReelModel reel;
+
+  /// Controller owning the player pool.
   final ReelController controller;
+
+  /// Styling and behavior configuration.
   final ReelConfig config;
+
+  /// Optional custom error UI. Falls back to a built-in overlay.
   final Widget Function(BuildContext context, ReelModel reel, String error)?
   errorBuilder;
+
+  /// Optional custom loading UI. Falls back to a buffering indicator.
   final Widget Function(BuildContext context, ReelModel reel)? loadingBuilder;
 
   @override

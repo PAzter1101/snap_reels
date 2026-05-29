@@ -25,6 +25,7 @@ class ReelController extends GetxController
         _VideoLifecycleMixin,
         _PreloadManagerMixin,
         _PlaybackMixin {
+  /// Creates a controller. Pass [reels] and [config] here or via [initialize].
   ReelController({
     List<ReelModel>? reels,
     ReelConfig? config,
@@ -41,6 +42,8 @@ class ReelController extends GetxController
 
   // --- Initialization ---
 
+  /// Initializes media_kit, the player pool, the page controller and
+  /// kicks off playback of the first reel. Safe to call repeatedly.
   Future<void> initialize({
     List<ReelModel>? reels,
     ReelConfig? config,
@@ -119,6 +122,9 @@ class ReelController extends GetxController
 
   // --- Page changes ---
 
+  /// Called by the PageView when the visible reel changes. Pauses the
+  /// previous video, initializes the new one and schedules adjacent
+  /// preload after a short debounce.
   Future<void> onPageChanged(int index) async {
     if (index == _currentIndex.value) return;
 
@@ -141,6 +147,7 @@ class ReelController extends GetxController
     });
   }
 
+  /// Jumps to the given reel and initializes it. No-op if it's already current.
   Future<void> initializeVideoForReel(ReelModel reel) async {
     final reelIndex = _reels.indexOf(reel);
     if (reelIndex == -1) {
@@ -157,6 +164,7 @@ class ReelController extends GetxController
 
   // --- Navigation ---
 
+  /// Animates the PageView to the next reel.
   Future<void> nextPage() async {
     if (_pageController == null || _currentIndex.value >= _reels.length - 1) {
       return;
@@ -167,6 +175,7 @@ class ReelController extends GetxController
     );
   }
 
+  /// Animates the PageView to the previous reel.
   Future<void> previousPage() async {
     if (_pageController == null || _currentIndex.value <= 0) {
       return;
@@ -209,6 +218,8 @@ class ReelController extends GetxController
 
   // --- Reel list management ---
 
+  /// Appends more reels to the feed without recreating the player pool.
+  /// Useful for infinite scroll pagination.
   void appendReels(List<ReelModel> newReels) {
     _reels.addAll(newReels);
     _reelsList.addAll(newReels);
@@ -216,14 +227,18 @@ class ReelController extends GetxController
 
   // --- Error / retry ---
 
+  /// Clears the current error state so the UI can render again.
   void clearError() {
     _error.value = null;
   }
 
+  /// Alias for [retryCurrentVideo].
   Future<void> retry() async {
     await retryCurrentVideo();
   }
 
+  /// Forces re-initialization of the currently visible video. Use after a
+  /// transient network or decoder error.
   Future<void> retryCurrentVideo() async {
     final currentReel = _currentReel.value;
     if (currentReel != null) {
@@ -233,17 +248,6 @@ class ReelController extends GetxController
       await _initializeCurrentVideo();
     }
   }
-
-  // --- No-op stubs (reserved for future use) ---
-
-  void toggleLike([ReelModel? reel]) => debugPrint('Like toggled');
-  void incrementShare([ReelModel? reel]) => debugPrint('Share incremented');
-  void downloadReel([ReelModel? reel]) => debugPrint('Download requested');
-  void blockUser([String? userId]) => debugPrint('User blocked');
-  void followUser([String? userId]) => debugPrint('User followed');
-
-  @override
-  void refresh() => debugPrint('Refresh called');
 
   // --- Lifecycle ---
 

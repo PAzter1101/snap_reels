@@ -6,6 +6,7 @@ part 'cache_item.g.dart';
 /// On-disk cache entry tracked by the LRU manager.
 @freezed
 abstract class CacheItem with _$CacheItem {
+  /// Creates a [CacheItem] for a single cached file.
   const factory CacheItem({
     required String cacheKey,
     required String filePath,
@@ -18,6 +19,7 @@ abstract class CacheItem with _$CacheItem {
 
   const CacheItem._();
 
+  /// Deserializes a [CacheItem] from JSON.
   factory CacheItem.fromJson(Map<String, Object?> json) =>
       _$CacheItemFromJson(json);
 
@@ -28,6 +30,7 @@ abstract class CacheItem with _$CacheItem {
 /// Snapshot of cache directory state for diagnostics and UI.
 @freezed
 abstract class CacheStats with _$CacheStats {
+  /// Creates a [CacheStats] aggregate.
   const factory CacheStats({
     required int totalFiles,
     required int totalSize,

@@ -22,6 +22,8 @@ import 'package:snap_reels/src/services/cache_manager.dart';
 /// Falls back to [fallback] until the first frame is decoded and on
 /// terminal failure of both URLs.
 class CachedThumbnail extends StatefulWidget {
+  /// Creates a [CachedThumbnail] for [reel] with [fallback] shown while
+  /// the image is loading or after both URLs fail.
   const CachedThumbnail({
     required this.reel,
     required this.fallback,
@@ -31,10 +33,21 @@ class CachedThumbnail extends StatefulWidget {
     this.loadTimeout = const Duration(seconds: 3),
   });
 
+  /// Reel whose `thumbnailUrl` is rendered.
   final ReelModel reel;
+
+  /// Widget shown while the image loads and after both URLs fail.
   final Widget fallback;
+
+  /// How the image is fitted into the available space.
   final BoxFit fit;
+
+  /// Optional builder returning a secondary URL to retry with when the
+  /// primary one fails or stalls past [loadTimeout].
   final String? Function(ReelModel reel)? proxyUrlBuilder;
+
+  /// Maximum time to wait for the primary URL before switching to the
+  /// proxy URL produced by [proxyUrlBuilder].
   final Duration loadTimeout;
 
   @override

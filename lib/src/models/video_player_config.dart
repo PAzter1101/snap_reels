@@ -4,6 +4,7 @@ import 'package:snap_reels/src/models/streaming_config.dart';
 
 /// Configuration for video player
 class VideoPlayerConfig {
+  /// Creates a [VideoPlayerConfig]. All fields have sensible defaults.
   const VideoPlayerConfig({
     this.showControls = false,
     this.allowFullScreen = false,
@@ -67,6 +68,7 @@ class VideoPlayerConfig {
   /// Enable picture-in-picture mode
   final bool enablePictureInPicture;
 
+  /// Returns a copy with the provided fields replaced.
   VideoPlayerConfig copyWith({
     bool? showControls,
     bool? allowFullScreen,
@@ -109,6 +111,7 @@ class VideoPlayerConfig {
 
 /// Configuration for video buffering
 class VideoBufferConfig {
+  /// Creates a [VideoBufferConfig]. All fields have sensible defaults.
   const VideoBufferConfig({
     this.minBufferDuration = const Duration(seconds: 15),
     this.maxBufferDuration = const Duration(seconds: 50),

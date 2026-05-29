@@ -1,5 +1,6 @@
 /// Configuration for caching
 class CacheConfig {
+  /// Creates a [CacheConfig]. All fields have sensible defaults.
   const CacheConfig({
     this.maxCacheSize = 100 * 1024 * 1024, // 100MB
     this.cacheDuration = const Duration(days: 7),
@@ -26,6 +27,7 @@ class CacheConfig {
 
 /// Configuration for preloading
 class PreloadConfig {
+  /// Creates a [PreloadConfig]. All fields have sensible defaults.
   const PreloadConfig({
     this.preloadAhead = 2,
     this.preloadBehind = 1,
@@ -60,6 +62,7 @@ class PreloadConfig {
   /// to disable.
   final int thumbnailPreloadBehind;
 
+  /// Returns a copy with the provided fields replaced.
   PreloadConfig copyWith({
     int? preloadAhead,
     int? preloadBehind,

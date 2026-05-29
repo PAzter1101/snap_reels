@@ -4,6 +4,7 @@ import 'package:snap_reels/src/models/reel_model.dart' show VideoFormat;
 
 /// Serializes [Duration] as integer milliseconds in JSON.
 class DurationMillisConverter implements JsonConverter<Duration, int> {
+  /// Creates the converter.
   const DurationMillisConverter();
 
   @override
@@ -16,6 +17,7 @@ class DurationMillisConverter implements JsonConverter<Duration, int> {
 /// Nullable variant of [DurationMillisConverter].
 class NullableDurationMillisConverter
     implements JsonConverter<Duration?, int?> {
+  /// Creates the converter.
   const NullableDurationMillisConverter();
 
   @override
@@ -30,6 +32,7 @@ class NullableDurationMillisConverter
 /// `Map<String, String>` and converted in/out via this converter.
 class VideoFormatMapConverter
     implements JsonConverter<Map<VideoFormat, String>?, Map<String, dynamic>?> {
+  /// Creates the converter.
   const VideoFormatMapConverter();
 
   @override

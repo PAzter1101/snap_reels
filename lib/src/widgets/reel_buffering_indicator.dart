@@ -5,8 +5,11 @@ import 'package:snap_reels/src/models/reel_config.dart';
 /// Buffering indicator shown by the reel overlay while libmpv is fetching
 /// more data. Host apps can replace the UI via [ReelConfig.bufferingBuilder].
 class ReelBufferingIndicator extends StatelessWidget {
+  /// Creates the buffering indicator styled by [config].
   const ReelBufferingIndicator({required this.config, super.key});
 
+  /// Styling configuration. Custom UI can be provided via
+  /// [ReelConfig.bufferingBuilder].
   final ReelConfig config;
 
   @override

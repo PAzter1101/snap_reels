@@ -15,6 +15,7 @@ export '../models/cache_item.dart';
 
 /// Advanced cache manager for video files and thumbnails
 class CacheManager {
+  /// Returns the singleton instance, creating it on first access.
   factory CacheManager() => _instance ??= CacheManager._internal();
   CacheManager._internal();
   static CacheManager? _instance;

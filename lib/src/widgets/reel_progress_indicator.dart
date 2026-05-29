@@ -11,6 +11,7 @@ import 'package:snap_reels/src/utils/reel_utils.dart';
 
 /// Video progress indicator with seeking, thumbnails, and animations.
 class ReelProgressIndicator extends StatefulWidget {
+  /// Creates the progress indicator for [reel].
   const ReelProgressIndicator({
     required this.reel,
     required this.config,
@@ -21,12 +22,26 @@ class ReelProgressIndicator extends StatefulWidget {
     this.onSeek,
     this.showThumbnail = true,
   });
+
+  /// Reel whose playback position is rendered.
   final ReelModel reel;
+
+  /// Styling and behavior configuration.
   final ReelConfig config;
+
+  /// Whether to render the draggable thumb.
   final bool showThumb;
+
+  /// Whether to render elapsed/total time labels next to the bar.
   final bool showTime;
+
+  /// Thickness of the bar in logical pixels.
   final double height;
+
+  /// Invoked when the user finishes a seek. Receives the new position.
   final void Function(Duration)? onSeek;
+
+  /// Whether the preview thumbnail floats above the thumb during a drag.
   final bool showThumbnail;
 
   @override

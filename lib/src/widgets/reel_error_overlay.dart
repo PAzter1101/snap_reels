@@ -7,6 +7,7 @@ import 'package:snap_reels/src/models/reel_model.dart';
 /// is a Material-style centered dialog with Cancel and Retry buttons. Host
 /// apps can replace the UI via [ReelConfig.errorDialogBuilder].
 class ReelErrorOverlay extends StatelessWidget {
+  /// Creates the error overlay for [reel] with [errorMessage].
   const ReelErrorOverlay({
     required this.reel,
     required this.config,
@@ -16,10 +17,19 @@ class ReelErrorOverlay extends StatelessWidget {
     super.key,
   });
 
+  /// Reel that failed to play.
   final ReelModel reel;
+
+  /// Styling and behavior configuration.
   final ReelConfig config;
+
+  /// Localized error description displayed to the user.
   final String errorMessage;
+
+  /// Invoked when the user taps the retry button.
   final VoidCallback onRetry;
+
+  /// Invoked when the user dismisses the error overlay.
   final VoidCallback onCancel;
 
   @override

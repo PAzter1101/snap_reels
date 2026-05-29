@@ -7,8 +7,13 @@ part 'reel_model.g.dart';
 
 /// Supported video streaming formats.
 enum VideoFormat {
+  /// Progressive MP4 over HTTP.
   mp4,
+
+  /// HTTP Live Streaming (`.m3u8`).
   hls,
+
+  /// Dynamic Adaptive Streaming over HTTP (`.mpd`).
   dash
   ;
 
@@ -31,6 +36,8 @@ enum VideoFormat {
 /// Video source configuration for different streaming formats.
 @freezed
 abstract class VideoSource with _$VideoSource {
+  /// Creates a video source. [url] is the primary one;
+  /// [alternativeSources] holds optional fallbacks per [VideoFormat].
   const factory VideoSource({
     required String url,
     @Default(VideoFormat.hls) VideoFormat format,
@@ -42,6 +49,7 @@ abstract class VideoSource with _$VideoSource {
 
   const VideoSource._();
 
+  /// Deserializes a [VideoSource] from JSON.
   factory VideoSource.fromJson(Map<String, Object?> json) =>
       _$VideoSourceFromJson(json);
 
@@ -60,6 +68,7 @@ abstract class VideoSource with _$VideoSource {
 /// A single reel item with all its metadata.
 @freezed
 abstract class ReelModel with _$ReelModel {
+  /// Creates a [ReelModel]. Only [id] and [videoSource] are required.
   const factory ReelModel({
     required String id,
     required VideoSource videoSource,
@@ -234,6 +243,7 @@ abstract class ReelModel with _$ReelModel {
     location: location,
   );
 
+  /// Deserializes a [ReelModel] from JSON.
   factory ReelModel.fromJson(Map<String, Object?> json) =>
       _$ReelModelFromJson(json);
 
@@ -258,6 +268,7 @@ abstract class ReelModel with _$ReelModel {
 /// User information attached to a reel.
 @freezed
 abstract class ReelUser with _$ReelUser {
+  /// Creates a [ReelUser].
   const factory ReelUser({
     required String id,
     required String username,
@@ -269,6 +280,7 @@ abstract class ReelUser with _$ReelUser {
     @Default(0) int followingCount,
   }) = _ReelUser;
 
+  /// Deserializes a [ReelUser] from JSON.
   factory ReelUser.fromJson(Map<String, Object?> json) =>
       _$ReelUserFromJson(json);
 }
@@ -276,6 +288,7 @@ abstract class ReelUser with _$ReelUser {
 /// Audio information attached to a reel.
 @freezed
 abstract class ReelAudio with _$ReelAudio {
+  /// Creates a [ReelAudio].
   const factory ReelAudio({
     String? title,
     String? artist,
@@ -284,6 +297,7 @@ abstract class ReelAudio with _$ReelAudio {
     int? duration,
   }) = _ReelAudio;
 
+  /// Deserializes a [ReelAudio] from JSON.
   factory ReelAudio.fromJson(Map<String, Object?> json) =>
       _$ReelAudioFromJson(json);
 }
@@ -291,7 +305,9 @@ abstract class ReelAudio with _$ReelAudio {
 /// Width/height pair for a video frame.
 @freezed
 abstract class Size with _$Size {
+  /// Creates a [Size] from positional dimensions.
   const factory Size(double width, double height) = _Size;
 
+  /// Deserializes a [Size] from JSON.
   factory Size.fromJson(Map<String, Object?> json) => _$SizeFromJson(json);
 }

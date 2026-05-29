@@ -15,6 +15,7 @@ import 'package:snap_reels/src/widgets/reel_progress_indicator.dart';
 
 /// Overlay shown over the video with user info, actions, and controls.
 class ReelOverlay extends StatefulWidget {
+  /// Creates a [ReelOverlay] bound to [reel] and [controller].
   const ReelOverlay({
     required this.reel,
     required this.config,
@@ -29,17 +30,38 @@ class ReelOverlay extends StatefulWidget {
     this.onBlock,
     this.onCompleted,
   });
+
+  /// Reel that this overlay decorates.
   final ReelModel reel;
+
+  /// Styling and behavior configuration.
   final ReelConfig config;
+
+  /// Invoked when the user taps anywhere on the overlay surface.
   final VoidCallback? onTap;
 
+  /// Invoked when the user long-presses the overlay surface.
   final VoidCallback? onLongPress;
+
+  /// Invoked when the user taps the like button.
   final VoidCallback? onLike;
+
+  /// Invoked when the user taps the share button.
   final VoidCallback? onShare;
+
+  /// Invoked when the user taps the comment button.
   final VoidCallback? onComment;
+
+  /// Invoked when the user taps the follow button.
   final VoidCallback? onFollow;
+
+  /// Invoked when the user blocks the reel's author via the more menu.
   final VoidCallback? onBlock;
+
+  /// Invoked once when the video finishes playing.
   final VoidCallback? onCompleted;
+
+  /// Controller driving the player behind this overlay.
   final ReelController controller;
 
   @override
@@ -454,10 +476,6 @@ class _ReelOverlayState extends State<ReelOverlay>
   void _handleFollow(BuildContext context) {
     if (widget.reel.user?.id == null) return;
 
-    // Implement follow functionality
-    widget.controller.followUser(widget.reel.user!.id);
-
-    // Show snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Following ${widget.reel.user!.username}'),

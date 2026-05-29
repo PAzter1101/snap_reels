@@ -12,6 +12,7 @@ import 'package:snap_reels/src/widgets/reel_video_player.dart';
 
 /// The main SnapReels widget for displaying vertical video reels
 class SnapReels extends StatefulWidget {
+  /// Creates a [SnapReels] feed. Only [reels] is required.
   const SnapReels({
     required this.reels,
     super.key,
@@ -88,14 +89,32 @@ class SnapReels extends StatefulWidget {
   /// Custom loading widget builder
   final Widget Function(BuildContext context, ReelModel reel)? loadingBuilder;
 
+  /// Optional externally owned controller. When `null`, [SnapReels]
+  /// creates and owns its own.
   final ReelController? controller;
+
+  /// Notified each time the visible reel changes. Receives the new index.
   final void Function(int index)? onReelChanged;
+
+  /// Notified when the user likes the active reel.
   final void Function(ReelModel reel)? onReelLiked;
+
+  /// Notified when the user shares the active reel.
   final void Function(ReelModel reel)? onReelShared;
+
+  /// Notified when the user opens comments on the active reel.
   final void Function(ReelModel reel)? onReelCommented;
+
+  /// Notified when the user follows a reel's author.
   final void Function(ReelUser user)? onUserFollowed;
+
+  /// Notified when the user blocks a reel's author.
   final void Function(ReelUser user)? onUserBlocked;
+
+  /// Notified once when a video reaches its end.
   final void Function(ReelModel reel)? onVideoCompleted;
+
+  /// Notified on a playback error. Receives the failing reel and the error.
   final void Function(ReelModel reel, Object error)? onVideoError;
 
   @override
@@ -187,9 +206,7 @@ class _SnapReelsState extends State<SnapReels>
       color: widget.config.backgroundColor,
       child: widget.config.enablePullToRefresh
           ? RefreshIndicator(
-              onRefresh: () async {
-                _controller.refresh();
-              },
+              onRefresh: widget.config.onRefresh ?? () async {},
               child: _buildPageView(),
             )
           : _buildPageView(),

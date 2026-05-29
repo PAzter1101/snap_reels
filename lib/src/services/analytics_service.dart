@@ -8,6 +8,7 @@ import 'package:snap_reels/src/models/reel_analytics.dart';
 
 /// Service for collecting and reporting analytics data
 class AnalyticsService {
+  /// Returns the singleton instance, creating it on first access.
   factory AnalyticsService() => _instance ??= AnalyticsService._internal();
   AnalyticsService._internal();
   static AnalyticsService? _instance;
@@ -526,6 +527,7 @@ class AnalyticsService {
 
 /// Analytics summary for a reel session
 class AnalyticsSummary {
+  /// Creates an [AnalyticsSummary] with all aggregate metrics.
   const AnalyticsSummary({
     required this.totalPlayTime,
     required this.watchPercentage,
@@ -537,6 +539,7 @@ class AnalyticsSummary {
     required this.sharesCount,
   });
 
+  /// Returns an all-zero summary, useful as a default placeholder.
   factory AnalyticsSummary.empty() {
     return const AnalyticsSummary(
       totalPlayTime: Duration.zero,
@@ -549,15 +552,32 @@ class AnalyticsSummary {
       sharesCount: 0,
     );
   }
+
+  /// Total time the user spent watching the reel.
   final Duration totalPlayTime;
+
+  /// Fraction of the video duration watched, in `[0, 1]`.
   final double watchPercentage;
+
+  /// Interactions per second across the session.
   final double interactionRate;
+
+  /// Number of buffering stalls during playback.
   final int bufferingEvents;
+
+  /// Composite score in `[0, 1]` derived from buffering and frame drops.
   final double performanceScore;
+
+  /// Number of likes captured for the session.
   final int likesCount;
+
+  /// Number of comments captured for the session.
   final int commentsCount;
+
+  /// Number of shares captured for the session.
   final int sharesCount;
 
+  /// Serializes the summary to a JSON-friendly map.
   Map<String, dynamic> toJson() {
     return {
       'totalPlayTime': totalPlayTime.inMilliseconds,

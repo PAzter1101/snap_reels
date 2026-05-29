@@ -6,8 +6,17 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 import 'package:snap_reels/src/models/reel_config.dart';
 
-/// Класс устройства по производительности.
-enum DeviceClass { low, medium, high }
+/// Performance tier of the host device.
+enum DeviceClass {
+  /// Underpowered device. Preload is reduced to limit memory pressure.
+  low,
+
+  /// Mid-range device. Preload uses defaults.
+  medium,
+
+  /// High-end device. Preload is widened to keep more reels warm.
+  high,
+}
 
 /// Определяет класс устройства и корректирует preload-стратегию.
 class DeviceClassifier {

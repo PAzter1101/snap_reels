@@ -1,13 +1,21 @@
 /// Enum for preferred streaming format
 enum PreferredStreamingFormat {
+  /// HTTP Live Streaming (`.m3u8`).
   hls,
+
+  /// Dynamic Adaptive Streaming over HTTP (`.mpd`).
   dash,
+
+  /// Progressive MP4.
   mp4,
-  auto, // Automatically choose best format
+
+  /// Pick the best available format at runtime.
+  auto,
 }
 
 /// Extension for PreferredStreamingFormat
 extension PreferredStreamingFormatExtension on PreferredStreamingFormat {
+  /// Lowercase wire-format name (`"hls"`, `"dash"`, `"mp4"`, `"auto"`).
   String get name {
     switch (this) {
       case PreferredStreamingFormat.hls:
@@ -24,6 +32,7 @@ extension PreferredStreamingFormatExtension on PreferredStreamingFormat {
 
 /// Configuration for streaming
 class StreamingConfig {
+  /// Creates a [StreamingConfig]. All fields have sensible defaults.
   const StreamingConfig({
     this.preferredFormat = PreferredStreamingFormat.auto,
     this.enableLowLatency = false,
@@ -83,6 +92,7 @@ class StreamingConfig {
   /// Initial volume
   final double initialVolume;
 
+  /// Returns a copy with the provided fields replaced.
   StreamingConfig copyWith({
     PreferredStreamingFormat? preferredFormat,
     bool? enableLowLatency,

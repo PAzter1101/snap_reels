@@ -13,6 +13,7 @@ import 'package:snap_reels/src/utils/reel_utils.dart';
 
 /// Right-side action stack: like, comment, share, etc.
 class ReelActions extends StatefulWidget {
+  /// Creates the action stack bound to [reel] and [config].
   const ReelActions({
     required this.reel,
     required this.config,
@@ -23,12 +24,26 @@ class ReelActions extends StatefulWidget {
     this.onFollow,
     this.onBlock,
   });
+
+  /// Reel whose counters and like-state are reflected by the buttons.
   final ReelModel reel;
+
+  /// Styling and behavior configuration.
   final ReelConfig config;
+
+  /// Invoked when the like button is tapped.
   final VoidCallback? onLike;
+
+  /// Invoked when the share button is tapped.
   final VoidCallback? onShare;
+
+  /// Invoked when the comment button is tapped.
   final VoidCallback? onComment;
+
+  /// Invoked when the follow button is tapped.
   final VoidCallback? onFollow;
+
+  /// Invoked when the block entry in the more menu is tapped.
   final VoidCallback? onBlock;
 
   @override
@@ -253,8 +268,6 @@ class _ReelActionsState extends State<ReelActions>
   }
 
   void _handleLike(ReelController controller) {
-    controller.toggleLike(widget.reel);
-
     if (!widget.reel.isLiked && mounted) {
       _showFloatingHeart();
     }
@@ -271,12 +284,9 @@ class _ReelActionsState extends State<ReelActions>
   }
 
   void _handleShare(ReelController controller) {
-    controller.incrementShare(widget.reel);
-
     if (widget.config.onShareTap != null) {
       widget.config.onShareTap!(widget.reel);
     } else {
-      // Default share implementation - can be customized by the app
       debugPrint('Sharing reel: ${widget.reel.videoSource.url}');
     }
     widget.onShare?.call();
@@ -300,8 +310,6 @@ class _ReelActionsState extends State<ReelActions>
     if (widget.config.onDownloadTap != null) {
       widget.config.onDownloadTap!(widget.reel);
     } else {
-      controller.downloadReel(widget.reel);
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Download started...'),

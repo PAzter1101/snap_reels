@@ -15,18 +15,26 @@ export 'video_player_config.dart';
 
 /// Custom action for the more menu
 class CustomAction {
+  /// Creates a custom action item rendered in the "more" menu.
   const CustomAction({
     required this.icon,
     required this.title,
     required this.onTap,
   });
+
+  /// Icon displayed next to [title].
   final IconData icon;
+
+  /// Label shown in the menu row.
   final String title;
+
+  /// Invoked when the user taps the action. Receives the active reel.
   final void Function(ReelModel) onTap;
 }
 
 /// Main configuration class for reels
 class ReelConfig {
+  /// Creates an immutable [ReelConfig]. All fields have sensible defaults.
   const ReelConfig({
     this.backgroundColor = Colors.black,
     this.showProgressIndicator = true,
@@ -87,7 +95,6 @@ class ReelConfig {
     this.reportLabel = 'Report',
     this.blockLabel = 'Block',
     this.copyLinkLabel = 'Copy link',
-    this.preloadRange = 1,
     this.autoPlay = true,
     this.loop = true,
     this.volume = 1.0,
@@ -239,64 +246,114 @@ class ReelConfig {
   /// Video player configuration
   final VideoPlayerConfig videoPlayerConfig;
 
-  /// UI Colors and styling
+  /// Primary accent color used for active states and emphasis.
   final Color accentColor;
+
+  /// Default color for caption / username text.
   final Color textColor;
+
+  /// Color of the played portion of the progress bar.
   final Color progressColor;
 
-  /// Action buttons configuration
+  /// Whether to render the "follow" button in the overlay.
   final bool showFollowButton;
+
+  /// Whether to render the bookmark action.
   final bool showBookmarkButton;
+
+  /// Whether to render the download action.
   final bool showDownloadButton;
+
+  /// Whether to render the "more options" action.
   final bool showMoreButton;
+
+  /// Whether to render the comment action.
   final bool showCommentButton;
+
+  /// Whether to render the bottom controls row (play/pause, time).
   final bool showBottomControls;
 
-  /// Button organization - move to more menu
+  /// If `true`, the bookmark action is moved from the side rail
+  /// into the more menu.
   final bool bookmarkInMoreMenu;
+
+  /// If `true`, the download action is moved from the side rail
+  /// into the more menu.
   final bool downloadInMoreMenu;
 
-  /// Follow button styling
+  /// Background color of the follow button in its idle state.
   final Color followButtonColor;
+
+  /// Background color of the follow button once the user is following.
   final Color followingButtonColor;
 
-  /// Caption configuration
+  /// Maximum number of lines shown in the caption before truncation.
   final int maxCaptionLines;
 
-  /// Whether to show hashtags below the caption
+  /// Whether hashtags are rendered as chips under the caption.
   final bool showHashtags;
 
-  /// Custom actions for more menu
+  /// Extra entries appended to the more menu.
   final List<CustomAction> customActions;
 
-  /// Callback functions
+  /// Invoked when the comment action is tapped. Overrides default sheet.
   final void Function(ReelModel)? onCommentTap;
+
+  /// Invoked when the share action is tapped.
   final void Function(ReelModel)? onShareTap;
+
+  /// Invoked when the download action is tapped.
   final void Function(ReelModel)? onDownloadTap;
+
+  /// Invoked when a hashtag chip is tapped. Receives the tag without
+  /// the leading `#`.
   final void Function(String)? onHashtagTap;
+
+  /// Invoked when the "report" entry in the more menu is tapped.
   final void Function(ReelModel)? onReportTap;
+
+  /// Invoked when the "block" entry in the more menu is tapped.
   final void Function(ReelModel)? onBlockTap;
+
+  /// Invoked when the "copy link" entry in the more menu is tapped.
   final void Function(ReelModel)? onCopyLinkTap;
 
-  /// Labels for more menu items (override to localize)
+  /// Localized label for the "report" entry in the more menu.
   final String reportLabel;
+
+  /// Localized label for the "block" entry in the more menu.
   final String blockLabel;
+
+  /// Localized label for the "copy link" entry in the more menu.
   final String copyLinkLabel;
 
-  /// New fields
-  final int? preloadRange;
+  /// Whether videos should start playing automatically when they
+  /// become active.
   final bool autoPlay;
+
+  /// Whether playback should loop when the video finishes.
   final bool loop;
+
+  /// Initial output volume in the range `[0, 1]`.
   final double volume;
+
+  /// Invoked when playback starts.
   final VoidCallback? onPlay;
+
+  /// Invoked when playback pauses.
   final VoidCallback? onPause;
+
+  /// Invoked when the user seeks. Receives the new playback position.
   final void Function(Duration)? onSeek;
+
+  /// Horizontal padding around the progress bar in logical pixels.
   final double progressBarPadding;
 
   /// Bottom inset for the overlay content (user info, actions, progress
   /// bar). Use it to lift the content above a tab bar or similar UI.
   final double contentBottomPadding;
 
+  /// Returns a copy with the provided fields replaced.
   ReelConfig copyWith({
     Color? backgroundColor,
     bool? showProgressIndicator,
@@ -365,7 +422,6 @@ class ReelConfig {
     String? reportLabel,
     String? blockLabel,
     String? copyLinkLabel,
-    int? preloadRange,
     bool? autoPlay,
     bool? loop,
     double? volume,
@@ -443,7 +499,6 @@ class ReelConfig {
       reportLabel: reportLabel ?? this.reportLabel,
       blockLabel: blockLabel ?? this.blockLabel,
       copyLinkLabel: copyLinkLabel ?? this.copyLinkLabel,
-      preloadRange: preloadRange ?? this.preloadRange,
       autoPlay: autoPlay ?? this.autoPlay,
       loop: loop ?? this.loop,
       volume: volume ?? this.volume,
