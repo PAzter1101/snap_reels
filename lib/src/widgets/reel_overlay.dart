@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -7,14 +5,28 @@ import 'package:get/get.dart';
 import 'package:snap_reels/src/controllers/reel_controller.dart';
 import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
-import 'package:snap_reels/src/utils/reel_utils.dart';
 import 'package:snap_reels/src/widgets/reel_actions.dart';
+import 'package:snap_reels/src/widgets/reel_bottom_controls.dart';
 import 'package:snap_reels/src/widgets/reel_buffering_indicator.dart';
 import 'package:snap_reels/src/widgets/reel_error_overlay.dart';
+import 'package:snap_reels/src/widgets/reel_overlay_gesture_layer.dart';
 import 'package:snap_reels/src/widgets/reel_progress_indicator.dart';
+import 'package:snap_reels/src/widgets/reel_user_info_overlay.dart';
+
+const _kDarkGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [
+    Colors.transparent,
+    Colors.transparent,
+    Color(0x64000000),
+    Color(0x96000000),
+  ],
+  stops: [0.0, 0.4, 0.7, 1.0],
+);
 
 /// Overlay shown over the video with user info, actions, and controls.
-class ReelOverlay extends StatefulWidget {
+class ReelOverlay extends StatelessWidget {
   /// Creates a [ReelOverlay] bound to [reel] and [controller].
   const ReelOverlay({
     required this.reel,
@@ -36,6 +48,9 @@ class ReelOverlay extends StatefulWidget {
 
   /// Styling and behavior configuration.
   final ReelConfig config;
+
+  /// Controller driving the player behind this overlay.
+  final ReelController controller;
 
   /// Invoked when the user taps anywhere on the overlay surface.
   final VoidCallback? onTap;
@@ -61,431 +76,95 @@ class ReelOverlay extends StatefulWidget {
   /// Invoked once when the video finishes playing.
   final VoidCallback? onCompleted;
 
-  /// Controller driving the player behind this overlay.
-  final ReelController controller;
-
-  @override
-  State<ReelOverlay> createState() => _ReelOverlayState();
-}
-
-class _ReelOverlayState extends State<ReelOverlay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _playPauseAnimationController;
-  late Animation<double> _playPauseAnimation;
-  final RxBool _showPlayPauseIcon = false.obs;
-  bool _wasPlayingBeforeLongPress = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _playPauseAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _playPauseAnimation = CurvedAnimation(
-      parent: _playPauseAnimationController,
-      curve: Curves.easeInOut,
-    );
-  }
-
-  @override
-  void dispose() {
-    _playPauseAnimationController.dispose();
-    super.dispose();
-  }
-
-  void _handleTap() {
-    if (widget.onTap != null) {
-      widget.onTap!();
-    } else {
-      _togglePlayPause();
-    }
-  }
-
-  void _handleLongPressStart() {
-    _wasPlayingBeforeLongPress = widget.controller.isPlaying.value;
-    unawaited(widget.controller.pause());
-  }
-
-  void _handleLongPressEnd() {
-    if (_wasPlayingBeforeLongPress) {
-      unawaited(widget.controller.play());
-    }
-  }
-
-  void _togglePlayPause() {
-    if (widget.controller.isPlaying.value) {
-      unawaited(widget.controller.pause());
-    } else {
-      unawaited(widget.controller.play());
-    }
-    _showPlayPauseIcon.value = true;
-    unawaited(
-      _playPauseAnimationController.forward().then((_) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _showPlayPauseIcon.value = false;
-          unawaited(_playPauseAnimationController.reverse());
-        });
-      }),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => GestureDetector(
-        onTap: _handleTap,
-        onLongPress: widget.onLongPress,
-        onLongPressStart: (details) {
-          if (widget.onLongPress != null) {
-            widget.onLongPress!();
-          } else {
-            _handleLongPressStart();
-          }
-        },
-        onLongPressEnd: (details) {
-          if (widget.onLongPress != null) {
-            widget.onLongPress!();
-          } else {
-            _handleLongPressEnd();
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.transparent,
-                Colors.black.withAlpha(100),
-                Colors.black.withAlpha(150),
-              ],
-              stops: const [0.0, 0.4, 0.7, 1.0],
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Main content area
-              Positioned(
-                bottom:
-                    (widget.config.showProgressIndicator ? 80 : 16) +
-                    widget.config.contentBottomPadding,
-                left: 16,
-                right: 80,
-                child: _buildUserInfo(context),
-              ),
+    final bottomInset =
+        (config.showProgressIndicator ? 80 : 16) +
+        config.styling.contentBottomPadding;
 
-              // Actions on the right
-              Positioned(
-                bottom:
-                    (widget.config.showProgressIndicator ? 80 : 16) +
-                    widget.config.contentBottomPadding,
-                right: 12,
-                child: ReelActions(
-                  reel: widget.reel,
-                  config: widget.config,
-                  onLike: widget.onLike,
-                  onShare: widget.onShare,
-                  onComment: widget.onComment,
-                  onFollow: widget.onFollow,
-                  onBlock: widget.onBlock,
-                ),
-              ),
-
-              // Bottom controls
-              if (widget.config.showBottomControls)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: _buildBottomControls(context),
-                ),
-
-              // Loading indicator
-              if (widget.controller.isVideoInitializing &&
-                  !widget.controller.hasError)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-
-              // Error dialog takes priority over buffering — while retry
-              // is pending the buffering stream can still tick.
-              if (widget.controller.hasError)
-                ReelErrorOverlay(
-                  reel: widget.reel,
-                  config: widget.config,
-                  errorMessage:
-                      widget.controller.errorMessage ??
-                      'Unknown error occurred',
-                  onRetry: widget.controller.retry,
-                  onCancel: widget.controller.clearError,
-                )
-              else if (widget.controller.isBuffering.value)
-                ReelBufferingIndicator(config: widget.config),
-
-              // Play/Pause icon animation
-              Obx(
-                () => _showPlayPauseIcon.value
-                    ? Center(
-                        child: ScaleTransition(
-                          scale: _playPauseAnimation,
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              widget.controller.isPlaying.value
-                                  ? Icons.pause
-                                  : Icons.play_arrow,
-                              color: widget.config.textColor,
-                              size: 48,
-                            ),
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-
-              // Progress indicator at bottom
-              if (widget.config.showProgressIndicator)
-                Positioned(
-                  bottom: 30 + widget.config.contentBottomPadding,
-                  left: widget.config.progressBarPadding,
-                  right: widget.config.progressBarPadding,
-                  child: ReelProgressIndicator(
-                    reel: widget.reel,
-                    config: widget.config,
-                    onSeek: (position) {
-                      widget.config.onSeek?.call(position);
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserInfo(BuildContext context) {
-    if (widget.reel.user == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // User info row
-        Row(
+    return ReelOverlayGestureLayer(
+      controller: controller,
+      config: config,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        decoration: const BoxDecoration(gradient: _kDarkGradient),
+        child: Stack(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: widget.reel.user!.profilePictureUrl != null
-                  ? NetworkImage(widget.reel.user!.profilePictureUrl!)
-                  : null,
-              backgroundColor: widget.config.accentColor,
-              child: widget.reel.user!.profilePictureUrl == null
-                  ? Icon(
-                      Icons.person,
-                      color: widget.config.textColor,
-                      size: 20,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.reel.user!.username,
-                    style: TextStyle(
-                      color: widget.config.textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (widget.reel.user!.displayName != null)
-                    Text(
-                      widget.reel.user!.displayName!,
-                      style: TextStyle(
-                        color: widget.config.textColor.withAlpha(192),
-                        fontSize: 12,
-                      ),
-                    ),
-                ],
+            Positioned(
+              bottom: bottomInset,
+              left: 16,
+              right: 80,
+              child: ReelUserInfoOverlay(
+                reel: reel,
+                config: config,
+                onFollowTap: () => _handleFollow(context),
+                onHashtagTap: (tag) => config.callbacks.onHashtagTap?.call(tag),
               ),
             ),
-            if (widget.config.showFollowButton &&
-                !(widget.reel.user?.isFollowing ?? true))
-              OutlinedButton(
-                onPressed: () => _handleFollow(context),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: widget.config.followButtonColor),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
+            Positioned(
+              bottom: bottomInset,
+              right: 12,
+              child: ReelActions(
+                reel: reel,
+                config: config,
+                onLike: onLike,
+                onShare: onShare,
+                onComment: onComment,
+                onFollow: onFollow,
+                onBlock: onBlock,
+              ),
+            ),
+            if (config.actions.showBottomControls)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: ReelBottomControls(
+                  reel: reel,
+                  config: config,
+                  controller: controller,
                 ),
-                child: Text(
-                  'Follow',
-                  style: TextStyle(
-                    color: widget.config.followButtonColor,
-                    fontSize: 12,
-                  ),
+              ),
+            Obx(
+              () => controller.hasError
+                  ? ReelErrorOverlay(
+                      reel: reel,
+                      config: config,
+                      errorMessage:
+                          controller.errorMessage ?? 'Unknown error occurred',
+                      onRetry: controller.retry,
+                      onCancel: controller.clearError,
+                    )
+                  : controller.isBuffering.value
+                  ? ReelBufferingIndicator(config: config)
+                  : const SizedBox.shrink(),
+            ),
+            if (config.showProgressIndicator)
+              Positioned(
+                bottom: 30 + config.styling.contentBottomPadding,
+                left: config.progressBarPadding,
+                right: config.progressBarPadding,
+                child: ReelProgressIndicator(
+                  reel: reel,
+                  config: config,
+                  onSeek: (position) => config.callbacks.onSeek?.call(position),
                 ),
               ),
           ],
         ),
-
-        const SizedBox(height: 12), // Caption
-        if (widget.reel.caption?.isNotEmpty == true)
-          Text(
-            widget.reel.caption!,
-            style: TextStyle(
-              color: widget.config.textColor,
-              fontSize: 14,
-              height: 1.3,
-            ),
-            maxLines: widget.config.maxCaptionLines,
-            overflow: TextOverflow.ellipsis,
-          ),
-
-        const SizedBox(height: 8),
-
-        // Hashtags
-        if (widget.config.showHashtags && widget.reel.hashtags.isNotEmpty)
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: widget.reel.hashtags
-                .map((hashtag) {
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _handleHashtagTap(context, hashtag),
-                    child: Container(
-                      constraints: BoxConstraints(
-                        minHeight: widget.config.hashtagMinTapTargetSize,
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '#$hashtag',
-                        style: TextStyle(
-                          color: widget.config.accentColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
-                })
-                .take(5)
-                .toList(),
-          ),
-
-        const SizedBox(height: 8),
-
-        // Music info
-        if (widget.reel.musicTitle != null)
-          Row(
-            children: [
-              Icon(
-                Icons.music_note,
-                color: widget.config.textColor.withAlpha(192),
-                size: 14,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  widget.reel.musicTitle!,
-                  style: TextStyle(
-                    color: widget.config.textColor.withAlpha(192),
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget _buildBottomControls(BuildContext context) {
-    final isPlaying = widget.controller.isPlaying.value;
-
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom + 8,
-        left: 16,
-        right: 16,
-        top: 8,
-      ),
-      child: Row(
-        children: [
-          // Play/Pause button
-          IconButton(
-            onPressed: () => widget.controller.togglePlayPause(),
-            icon: Icon(
-              isPlaying ? Icons.pause : Icons.play_arrow,
-              color: widget.config.textColor,
-              size: 28,
-            ),
-          ),
-
-          const SizedBox(width: 8), // Duration
-          Text(
-            ReelUtils.formatDurationFromMilliseconds(
-              widget.reel.duration?.inMilliseconds,
-            ),
-            style: TextStyle(
-              color: widget.config.textColor.withAlpha(192),
-              fontSize: 12,
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Mute button
-          IconButton(
-            onPressed: () => widget.controller.toggleMute(),
-            icon: Icon(
-              widget.controller.isMuted.value
-                  ? Icons.volume_off
-                  : Icons.volume_up,
-              color: widget.config.textColor,
-              size: 24,
-            ),
-          ),
-        ],
       ),
     );
   }
 
   void _handleFollow(BuildContext context) {
-    if (widget.reel.user?.id == null) return;
-
+    if (reel.user?.id == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Following ${widget.reel.user!.username}'),
+        content: Text('Following ${reel.user!.username}'),
         duration: const Duration(seconds: 2),
-        backgroundColor: widget.config.accentColor,
+        backgroundColor: config.styling.accentColor,
       ),
     );
-  }
-
-  void _handleHashtagTap(BuildContext context, String hashtag) {
-    widget.config.onHashtagTap?.call(hashtag);
   }
 }

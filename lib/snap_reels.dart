@@ -7,6 +7,7 @@ export 'src/models/reel_model.dart'
 export 'src/services/analytics_service.dart';
 export 'src/services/cache_manager.dart';
 export 'src/services/streaming_service.dart';
+export 'src/snap_reels_factory.dart';
 export 'src/snap_reels_widget.dart';
 export 'src/utils/reel_utils.dart';
 export 'src/widgets/cached_thumbnail.dart';

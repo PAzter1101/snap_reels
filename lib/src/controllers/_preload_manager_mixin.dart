@@ -27,11 +27,11 @@ mixin _PreloadManagerMixin
   /// passed reels. Goes through [CacheManager] so the next mount of
   /// `CachedThumbnail` for those reels hits disk cache instantly.
   ///
-  /// Honours [ReelConfig.thumbnailProxyUrlBuilder]: if set, the proxy URL
-  /// is downloaded and aliased back to the primary URL key in the cache
-  /// — so `CachedThumbnail` still queries by primary URL on mount and
-  /// gets the cached file without waiting for
-  /// [ReelConfig.thumbnailLoadTimeout].
+  /// Honours `ReelConfig.builders.thumbnailProxyUrlBuilder`: if set, the
+  /// proxy URL is downloaded and aliased back to the primary URL key in
+  /// the cache — so `CachedThumbnail` still queries by primary URL on
+  /// mount and gets the cached file without waiting for
+  /// `ReelConfig.builders.thumbnailLoadTimeout`.
   void _preloadAdjacentThumbnails(int currentIndex) {
     final preload = _effectivePreloadConfig ?? _config.preloadConfig;
     final ahead = preload.thumbnailPreloadAhead;
@@ -50,7 +50,7 @@ mixin _PreloadManagerMixin
   }
 
   Future<void> _prefetchThumbnail(ReelModel reel, String primary) async {
-    final proxyUrl = _config.thumbnailProxyUrlBuilder?.call(reel);
+    final proxyUrl = _config.builders.thumbnailProxyUrlBuilder?.call(reel);
     final url = proxyUrl ?? primary;
     final path = await CacheManager().downloadAndCache(url);
     if (path != null && proxyUrl != null && proxyUrl != primary) {

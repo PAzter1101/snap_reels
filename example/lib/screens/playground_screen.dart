@@ -310,16 +310,15 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
     final config = ReelConfig(
       showProgressIndicator: _showProgressBar.value,
       enableCaching: _enableCaching.value,
-      accentColor: Colors.blue,
-      textColor: Colors.white,
-      showFollowButton: true,
-      showBookmarkButton: true,
-      showDownloadButton: false, // Disabled for mini preview
-      showMoreButton: true,
-      bookmarkInMoreMenu: true,
-      downloadInMoreMenu: true,
-      followButtonColor: Colors.white,
-      followingButtonColor: Colors.white70,
+      styling: const ReelStylingConfig(
+        accentColor: Colors.blue,
+        textColor: Colors.white,
+        followButtonColor: Colors.white,
+        followingButtonColor: Colors.white70,
+      ),
+      actions: const ReelActionsConfig(
+        showDownloadButton: false,
+      ),
       preloadConfig: PreloadConfig(
         preloadAhead: _preloadRange.value,
         preloadBehind: 1,

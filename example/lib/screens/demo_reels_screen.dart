@@ -79,11 +79,15 @@ class _DemoReelsScreenState extends State<DemoReelsScreen> {
                       reels: _reels,
                       controller: _controller,
                       config: widget.config?.copyWith(
-                            showDownloadButton: false,
+                            actions: (widget.config?.actions ??
+                                    const ReelActionsConfig())
+                                .copyWith(showDownloadButton: false),
                             enablePullToRefresh: true,
                           ) ??
-                          ReelConfig(
-                            showDownloadButton: false,
+                          const ReelConfig(
+                            actions: ReelActionsConfig(
+                              showDownloadButton: false,
+                            ),
                             enablePullToRefresh: true,
                           ),
                       onReelChanged: (index) {

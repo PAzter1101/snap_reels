@@ -1,404 +1,178 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Utility functions for the awesome reels package
+import 'package:snap_reels/src/utils/color_utils.dart';
+import 'package:snap_reels/src/utils/format_utils.dart';
+import 'package:snap_reels/src/utils/math_utils.dart';
+import 'package:snap_reels/src/utils/platform_utils.dart';
+import 'package:snap_reels/src/utils/responsive_utils.dart';
+import 'package:snap_reels/src/utils/string_utils.dart';
+import 'package:snap_reels/src/utils/timing_utils.dart';
+import 'package:snap_reels/src/utils/video_url_utils.dart';
+
+/// Backwards-compatible facade aggregating the focused `*Utils` helpers
+/// in [package:snap_reels/src/utils]. Prefer the individual classes
+/// (e.g. [FormatUtils], [ColorUtils]) in new code.
 class ReelUtils {
   ReelUtils._();
 
-  /// Format duration to string (e.g., "1:23", "12:34")
-  static String formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
+  /// See [FormatUtils.formatDuration].
+  static String formatDuration(Duration duration) =>
+      FormatUtils.formatDuration(duration);
 
-    if (duration.inHours > 0) {
-      final hours = twoDigits(duration.inHours);
-      return '$hours:$minutes:$seconds';
-    }
+  /// See [FormatUtils.formatDurationFromMilliseconds].
+  static String formatDurationFromMilliseconds(int? milliseconds) =>
+      FormatUtils.formatDurationFromMilliseconds(milliseconds);
 
-    return '$minutes:$seconds';
-  }
+  /// See [FormatUtils.formatCount].
+  static String formatCount(int count) => FormatUtils.formatCount(count);
 
-  /// Format duration from milliseconds to string
-  static String formatDurationFromMilliseconds(int? milliseconds) {
-    if (milliseconds == null) return '00:00';
-    return formatDuration(Duration(milliseconds: milliseconds));
-  }
+  /// See [FormatUtils.formatFileSize].
+  static String formatFileSize(int bytes) => FormatUtils.formatFileSize(bytes);
 
-  /// Format large numbers (e.g., 1000 -> "1K", 1500000 -> "1.5M")
-  static String formatCount(int count) {
-    if (count < 1000) return count.toString();
-    if (count < 1000000) {
-      final value = count / 1000;
-      return value % 1 == 0
-          ? '${value.toInt()}K'
-          : '${value.toStringAsFixed(1)}K';
-    }
-    if (count < 1000000000) {
-      final value = count / 1000000;
-      return value % 1 == 0
-          ? '${value.toInt()}M'
-          : '${value.toStringAsFixed(1)}M';
-    }
-    final value = count / 1000000000;
-    return value % 1 == 0
-        ? '${value.toInt()}B'
-        : '${value.toStringAsFixed(1)}B';
-  }
+  /// See [StringUtils.generateId].
+  static String generateId() => StringUtils.generateId();
 
-  /// Format file size (e.g., 1024 -> "1 KB", 1048576 -> "1 MB")
-  static String formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
+  /// See [VideoUrlUtils.isValidUrl].
+  static bool isValidUrl(String url) => VideoUrlUtils.isValidUrl(url);
 
-  /// Generate a unique ID
-  static String generateId() {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final random = Random().nextInt(999999);
-    return '${timestamp}_$random';
-  }
+  /// See [VideoUrlUtils.isVideoUrl].
+  static bool isVideoUrl(String url) => VideoUrlUtils.isVideoUrl(url);
 
-  /// Validate URL format
-  static bool isValidUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      return uri.hasScheme && (uri.isScheme('http') || uri.isScheme('https'));
-    } catch (e) {
-      return false;
-    }
-  }
+  /// See [VideoUrlUtils.extractVideoId].
+  static String? extractVideoId(String url) =>
+      VideoUrlUtils.extractVideoId(url);
 
-  /// Check if URL is a video file based on extension
-  static bool isVideoUrl(String url) {
-    final videoExtensions = [
-      '.mp4',
-      '.mov',
-      '.avi',
-      '.mkv',
-      '.webm',
-      '.flv',
-      '.wmv',
-      '.m4v',
-      '.3gp',
-    ];
+  /// See [VideoUrlUtils.getThumbnailUrl].
+  static String? getThumbnailUrl(String videoUrl) =>
+      VideoUrlUtils.getThumbnailUrl(videoUrl);
 
-    final lowercaseUrl = url.toLowerCase();
-    return videoExtensions.any(lowercaseUrl.contains);
-  }
+  /// See [MathUtils.calculateAspectRatio].
+  static double calculateAspectRatio(double width, double height) =>
+      MathUtils.calculateAspectRatio(width, height);
 
-  /// Extract video ID from various video platforms
-  static String? extractVideoId(String url) {
-    // YouTube
-    final youtubeRegex = RegExp(
-      r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})',
-      caseSensitive: false,
-    );
-
-    final youtubeMatch = youtubeRegex.firstMatch(url);
-    if (youtubeMatch != null) {
-      return youtubeMatch.group(1);
-    }
-
-    // Vimeo
-    final vimeoRegex = RegExp(r'vimeo\.com\/(\d+)', caseSensitive: false);
-    final vimeoMatch = vimeoRegex.firstMatch(url);
-    if (vimeoMatch != null) {
-      return vimeoMatch.group(1);
-    }
-
-    return null;
-  }
-
-  /// Get thumbnail URL from video URL (platform specific)
-  static String? getThumbnailUrl(String videoUrl) {
-    final videoId = extractVideoId(videoUrl);
-    if (videoId == null) return null;
-
-    // YouTube thumbnail
-    if (videoUrl.contains('youtube') || videoUrl.contains('youtu.be')) {
-      return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
-    }
-
-    // Vimeo thumbnail (requires API call in real implementation)
-    if (videoUrl.contains('vimeo')) {
-      return 'https://vumbnail.com/$videoId.jpg';
-    }
-
-    return null;
-  }
-
-  /// Calculate aspect ratio from width and height
-  static double calculateAspectRatio(double width, double height) {
-    if (height == 0) return 16 / 9; // Default aspect ratio
-    return width / height;
-  }
-
-  /// Get responsive font size based on screen size
+  /// See [ResponsiveUtils.getResponsiveFontSize].
   static double getResponsiveFontSize(
     BuildContext context,
     double baseFontSize,
-  ) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final scaleFactor = screenWidth / 375; // Base width (iPhone 6/7/8)
-    return baseFontSize * scaleFactor.clamp(0.8, 1.2);
-  }
+  ) => ResponsiveUtils.getResponsiveFontSize(context, baseFontSize);
 
-  /// Get responsive padding based on screen size
+  /// See [ResponsiveUtils.getResponsivePadding].
   static EdgeInsets getResponsivePadding(
     BuildContext context,
     EdgeInsets basePadding,
-  ) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final scaleFactor = screenWidth / 375; // Base width
+  ) => ResponsiveUtils.getResponsivePadding(context, basePadding);
 
-    return EdgeInsets.only(
-      left: basePadding.left * scaleFactor,
-      top: basePadding.top * scaleFactor,
-      right: basePadding.right * scaleFactor,
-      bottom: basePadding.bottom * scaleFactor,
-    );
-  }
+  /// See [ResponsiveUtils.isTablet].
+  static bool isTablet(BuildContext context) =>
+      ResponsiveUtils.isTablet(context);
 
-  /// Check if device is tablet
-  static bool isTablet(BuildContext context) {
-    final diagonal = _calculateDiagonal(context);
-    return diagonal > 7.0; // Inches
-  }
-
-  /// Calculate device diagonal in inches
-  static double _calculateDiagonal(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-
-    final widthInches = size.width * devicePixelRatio / 160;
-    final heightInches = size.height * devicePixelRatio / 160;
-
-    return sqrt(widthInches * widthInches + heightInches * heightInches);
-  }
-
-  /// Debounce function calls. Pass in the previous timer (if any) so it
-  /// can be cancelled, and return the new one so the caller can store it.
+  /// See [TimingUtils.debounce].
   static Timer debounce(
     void Function() function,
     Duration delay, {
     Timer? previousTimer,
-  }) {
-    previousTimer?.cancel();
-    return Timer(delay, function);
-  }
+  }) => TimingUtils.debounce(function, delay, previousTimer: previousTimer);
 
-  /// Throttle function calls
-  static bool throttle(String key, Duration duration) {
-    final now = DateTime.now();
-    final lastCall = _throttleMap[key];
+  /// See [TimingUtils.throttle].
+  static bool throttle(String key, Duration duration) =>
+      TimingUtils.throttle(key, duration);
 
-    if (lastCall == null || now.difference(lastCall) >= duration) {
-      _throttleMap[key] = now;
-      return true;
-    }
+  /// See [ColorUtils.hexToColor].
+  static Color hexToColor(String hexString) => ColorUtils.hexToColor(hexString);
 
-    return false;
-  }
+  /// See [ColorUtils.colorToHex].
+  static String colorToHex(Color color) => ColorUtils.colorToHex(color);
 
-  static final Map<String, DateTime> _throttleMap = {};
+  /// See [ColorUtils.getLuminance].
+  static double getLuminance(Color color) => ColorUtils.getLuminance(color);
 
-  /// Convert hex color string to Color
-  static Color hexToColor(String hexString) {
-    final buffer = StringBuffer();
-    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
-    buffer.write(hexString.replaceFirst('#', ''));
-    return Color(int.parse(buffer.toString(), radix: 16));
-  }
+  /// See [ColorUtils.getContrastingColor].
+  static Color getContrastingColor(Color backgroundColor) =>
+      ColorUtils.getContrastingColor(backgroundColor);
 
-  /// Convert Color to hex string
-  static String colorToHex(Color color) {
-    final hex = color.toARGB32().toRadixString(16).padLeft(8, '0');
-    return '#${hex.substring(2)}';
-  }
-
-  /// Calculate luminance of a color
-  static double getLuminance(Color color) {
-    return color.computeLuminance();
-  }
-
-  /// Get contrasting text color (black or white) for a background color
-  static Color getContrastingColor(Color backgroundColor) {
-    return getLuminance(backgroundColor) > 0.5 ? Colors.black : Colors.white;
-  }
-
-  /// Generate gradient colors
+  /// See [ColorUtils.generateGradient].
   static List<Color> generateGradient(
     Color startColor,
     Color endColor,
     int steps,
-  ) {
-    final colors = <Color>[];
+  ) => ColorUtils.generateGradient(startColor, endColor, steps);
 
-    for (var i = 0; i < steps; i++) {
-      final ratio = i / (steps - 1);
-      final red =
-          ((startColor.r * 255.0) +
-                  ((endColor.r - startColor.r) * 255.0) * ratio)
-              .round();
-      final green =
-          ((startColor.g * 255.0) +
-                  ((endColor.g - startColor.g) * 255.0) * ratio)
-              .round();
-      final blue =
-          ((startColor.b * 255.0) +
-                  ((endColor.b - startColor.b) * 255.0) * ratio)
-              .round();
-      final alpha =
-          ((startColor.a * 255.0) +
-                  ((endColor.a - startColor.a) * 255.0) * ratio)
-              .round();
-      colors.add(Color.fromARGB(alpha, red, green, blue));
-    }
+  /// See [MathUtils.easeInOut].
+  static double easeInOut(double t) => MathUtils.easeInOut(t);
 
-    return colors;
-  }
+  /// See [MathUtils.lerp].
+  static double lerp(double start, double end, double t) =>
+      MathUtils.lerp(start, end, t);
 
-  /// Animate value with easing
-  static double easeInOut(double t) {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-  }
+  /// See [MathUtils.clamp].
+  static T clamp<T extends num>(T value, T min, T max) =>
+      MathUtils.clamp(value, min, max);
 
-  /// Linear interpolation
-  static double lerp(double start, double end, double t) {
-    return start + (end - start) * t;
-  }
-
-  /// Clamp value between min and max
-  static T clamp<T extends num>(T value, T min, T max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  }
-
-  /// Map value from one range to another
+  /// See [MathUtils.mapRange].
   static double mapRange(
     double value,
     double inMin,
     double inMax,
     double outMin,
     double outMax,
-  ) {
-    return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-  }
+  ) => MathUtils.mapRange(value, inMin, inMax, outMin, outMax);
 
-  /// Check if two rectangles intersect
-  static bool rectsIntersect(Rect rect1, Rect rect2) {
-    return rect1.left < rect2.right &&
-        rect1.right > rect2.left &&
-        rect1.top < rect2.bottom &&
-        rect1.bottom > rect2.top;
-  }
+  /// See [MathUtils.rectsIntersect].
+  static bool rectsIntersect(Rect rect1, Rect rect2) =>
+      MathUtils.rectsIntersect(rect1, rect2);
 
-  /// Get distance between two points
-  static double getDistance(Offset point1, Offset point2) {
-    final dx = point1.dx - point2.dx;
-    final dy = point1.dy - point2.dy;
-    return sqrt(dx * dx + dy * dy);
-  }
+  /// See [MathUtils.getDistance].
+  static double getDistance(Offset point1, Offset point2) =>
+      MathUtils.getDistance(point1, point2);
 
-  /// Get angle between two points in radians
-  static double getAngle(Offset point1, Offset point2) {
-    final dx = point2.dx - point1.dx;
-    final dy = point2.dy - point1.dy;
-    return atan2(dy, dx);
-  }
+  /// See [MathUtils.getAngle].
+  static double getAngle(Offset point1, Offset point2) =>
+      MathUtils.getAngle(point1, point2);
 
-  /// Convert radians to degrees
-  static double radiansToDegrees(double radians) {
-    return radians * 180 / pi;
-  }
+  /// See [MathUtils.radiansToDegrees].
+  static double radiansToDegrees(double radians) =>
+      MathUtils.radiansToDegrees(radians);
 
-  /// Convert degrees to radians
-  static double degreesToRadians(double degrees) {
-    return degrees * pi / 180;
-  }
+  /// See [MathUtils.degreesToRadians].
+  static double degreesToRadians(double degrees) =>
+      MathUtils.degreesToRadians(degrees);
 
-  /// Generate random color
-  static Color randomColor() {
-    final random = Random();
-    return Color.fromARGB(
-      255,
-      random.nextInt(256),
-      random.nextInt(256),
-      random.nextInt(256),
-    );
-  }
+  /// See [ColorUtils.randomColor].
+  static Color randomColor() => ColorUtils.randomColor();
 
-  /// Validate email format
-  static bool isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
-  }
+  /// See [StringUtils.isValidEmail].
+  static bool isValidEmail(String email) => StringUtils.isValidEmail(email);
 
-  /// Check if string contains only numbers
-  static bool isNumeric(String str) {
-    return double.tryParse(str) != null;
-  }
+  /// See [StringUtils.isNumeric].
+  static bool isNumeric(String str) => StringUtils.isNumeric(str);
 
-  /// Capitalize first letter of each word
-  static String capitalizeWords(String text) {
-    return text
-        .split(' ')
-        .map((word) {
-          if (word.isEmpty) return word;
-          return word[0].toUpperCase() + word.substring(1).toLowerCase();
-        })
-        .join(' ');
-  }
+  /// See [StringUtils.capitalizeWords].
+  static String capitalizeWords(String text) =>
+      StringUtils.capitalizeWords(text);
 
-  /// Truncate text with ellipsis
-  static String truncateText(String text, int maxLength) {
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
-  }
+  /// See [StringUtils.truncateText].
+  static String truncateText(String text, int maxLength) =>
+      StringUtils.truncateText(text, maxLength);
 
-  /// Get platform-specific file path separator
-  static String get pathSeparator => Platform.pathSeparator;
+  /// See [PlatformUtils.pathSeparator].
+  static String get pathSeparator => PlatformUtils.pathSeparator;
 
-  /// Check if app is running in debug mode
-  static bool get isDebugMode => kDebugMode;
+  /// See [PlatformUtils.isDebugMode].
+  static bool get isDebugMode => PlatformUtils.isDebugMode;
 
-  /// Check if app is running in release mode
-  static bool get isReleaseMode => kReleaseMode;
+  /// See [PlatformUtils.isReleaseMode].
+  static bool get isReleaseMode => PlatformUtils.isReleaseMode;
 
-  /// Get current timestamp in milliseconds
-  static int get timestamp => DateTime.now().millisecondsSinceEpoch;
+  /// See [TimingUtils.timestamp].
+  static int get timestamp => TimingUtils.timestamp;
 
-  /// Convert timestamp to DateTime
-  static DateTime timestampToDateTime(int timestamp) {
-    return DateTime.fromMillisecondsSinceEpoch(timestamp);
-  }
+  /// See [TimingUtils.timestampToDateTime].
+  static DateTime timestampToDateTime(int timestamp) =>
+      TimingUtils.timestampToDateTime(timestamp);
 
-  /// Get time ago string (e.g., "2 hours ago", "3 days ago")
-  static String getTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-    } else if (difference.inHours > 0) {
-      final h = difference.inHours;
-      return '$h hour${h == 1 ? '' : 's'} ago';
-    } else if (difference.inMinutes > 0) {
-      final m = difference.inMinutes;
-      return '$m minute${m == 1 ? '' : 's'} ago';
-    } else {
-      return 'Just now';
-    }
-  }
+  /// See [TimingUtils.getTimeAgo].
+  static String getTimeAgo(DateTime dateTime) =>
+      TimingUtils.getTimeAgo(dateTime);
 }

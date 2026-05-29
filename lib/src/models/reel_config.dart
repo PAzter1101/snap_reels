@@ -2,64 +2,50 @@ import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
 
-import 'package:snap_reels/snap_reels.dart' show CacheManager, ReelVideoPlayer;
 import 'package:snap_reels/src/models/cache_config.dart';
 import 'package:snap_reels/src/models/progress_config.dart';
-import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/models/reel_actions_config.dart';
+import 'package:snap_reels/src/models/reel_interaction_callbacks.dart';
+import 'package:snap_reels/src/models/reel_overlay_builders_config.dart';
+import 'package:snap_reels/src/models/reel_styling_config.dart';
 import 'package:snap_reels/src/models/video_player_config.dart';
 
 export 'cache_config.dart';
 export 'progress_config.dart';
+export 'reel_actions_config.dart';
+export 'reel_interaction_callbacks.dart';
+export 'reel_overlay_builders_config.dart';
+export 'reel_styling_config.dart';
 export 'streaming_config.dart';
 export 'video_player_config.dart';
 
-/// Custom action for the more menu
-class CustomAction {
-  /// Creates a custom action item rendered in the "more" menu.
-  const CustomAction({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  /// Icon displayed next to [title].
-  final IconData icon;
-
-  /// Label shown in the menu row.
-  final String title;
-
-  /// Invoked when the user taps the action. Receives the active reel.
-  final void Function(ReelModel) onTap;
-}
-
-/// Main configuration class for reels
+/// Main configuration for the `SnapReels` feed.
+///
+/// Grouped sub-configs (recommended):
+///   - [styling] — colors, shimmer, caption layout
+///   - [actions] — button visibility, sizes, more-menu labels
+///   - [builders] — error/loading/buffering UI overrides
+///   - [callbacks] — interaction side-effects
+///
+/// Top-level fields cover the player pool, pagination and other
+/// feed-wide behavior.
 class ReelConfig {
-  /// Creates an immutable [ReelConfig]. All fields have sensible defaults.
+  /// Creates an immutable [ReelConfig].
   const ReelConfig({
-    this.backgroundColor = Colors.black,
-    this.showProgressIndicator = true,
+    this.styling = const ReelStylingConfig(),
+    this.actions = const ReelActionsConfig(),
+    this.builders = const ReelOverlayBuildersConfig(),
+    this.callbacks = const ReelInteractionCallbacks(),
     this.progressIndicatorConfig = const ProgressIndicatorConfig(),
+    this.videoPlayerConfig = const VideoPlayerConfig(),
+    this.preloadConfig = const PreloadConfig(),
+    this.cacheConfig,
+    this.httpClient,
+    this.showProgressIndicator = true,
     this.showControlsOverlay = true,
     this.controlsAutoHideDuration = const Duration(seconds: 3),
     this.enableCaching = true,
-    this.cacheConfig,
-    this.httpClient,
     this.enableAnalytics = false,
-    this.preloadConfig = const PreloadConfig(),
-    this.errorWidgetBuilder,
-    this.loadingWidgetBuilder,
-    this.errorDialogBuilder,
-    this.bufferingBuilder,
-    this.thumbnailFallbackBuilder,
-    this.thumbnailProxyUrlBuilder,
-    this.thumbnailLoadTimeout = const Duration(seconds: 3),
-    this.actionMinTapTargetSize = 44,
-    this.actionIconSize = 28,
-    this.likeButtonSize = 32,
-    this.actionSpacing = 16,
-    this.hashtagMinTapTargetSize = 0,
-    this.showShimmerWhileLoading = true,
-    this.shimmerConfig,
     this.physics,
     this.pageController,
     this.enablePullToRefresh = false,
@@ -68,264 +54,83 @@ class ReelConfig {
     this.onLoadMore,
     this.loadMoreThreshold = 3,
     this.keepScreenAwake = true,
-    this.videoPlayerConfig = const VideoPlayerConfig(),
-    this.accentColor = Colors.red,
-    this.textColor = Colors.white,
-    this.progressColor = Colors.white,
-    this.showFollowButton = true,
-    this.showBookmarkButton = true,
-    this.showDownloadButton = true,
-    this.showMoreButton = true,
-    this.showCommentButton = true,
-    this.showBottomControls = false,
-    this.bookmarkInMoreMenu = true,
-    this.downloadInMoreMenu = true,
-    this.followButtonColor = Colors.white,
-    this.followingButtonColor = Colors.white70,
-    this.maxCaptionLines = 3,
-    this.showHashtags = true,
-    this.customActions = const [],
-    this.onCommentTap,
-    this.onShareTap,
-    this.onDownloadTap,
-    this.onHashtagTap,
-    this.onReportTap,
-    this.onBlockTap,
-    this.onCopyLinkTap,
-    this.reportLabel = 'Report',
-    this.blockLabel = 'Block',
-    this.copyLinkLabel = 'Copy link',
     this.autoPlay = true,
     this.loop = true,
     this.volume = 1.0,
-    this.onPlay,
-    this.onPause,
-    this.onSeek,
     this.progressBarPadding = 20.0,
-    this.contentBottomPadding = 0.0,
   });
 
-  /// Background color for the reels container
-  final Color backgroundColor;
+  /// Visual styling: colors, shimmer, caption, content padding.
+  final ReelStylingConfig styling;
 
-  /// Whether to show the progress indicator
-  final bool showProgressIndicator;
+  /// Action side-rail and more menu: visibility, sizes, labels.
+  final ReelActionsConfig actions;
 
-  /// Progress indicator configuration
+  /// Overrides for error / loading / buffering / thumbnail UI.
+  final ReelOverlayBuildersConfig builders;
+
+  /// Side-effect callbacks for taps, plays, seeks.
+  final ReelInteractionCallbacks callbacks;
+
+  /// Progress indicator styling.
   final ProgressIndicatorConfig progressIndicatorConfig;
 
-  /// Whether to show video controls overlay
-  final bool showControlsOverlay;
-
-  /// Auto-hide controls after this duration (null means never hide)
-  final Duration? controlsAutoHideDuration;
-
-  /// Whether to enable caching
-  final bool enableCaching;
-
-  /// Cache configuration
-  final CacheConfig? cacheConfig;
-
-  /// Optional pre-configured [Dio] used by [CacheManager] for thumbnail and
-  /// video prefetch. Pass the host app's HTTP client (e.g. wired with
-  /// `NativeAdapter` + `CronetEngine`) to share its connection pool, TLS
-  /// session cache and interceptors. When null, [CacheManager] creates its
-  /// own plain [Dio].
-  final Dio? httpClient;
-
-  /// Whether to enable analytics
-  final bool enableAnalytics;
-
-  /// Preload configuration
-  final PreloadConfig preloadConfig;
-
-  /// Error widget builder — inline error shown over the video area by
-  /// [ReelVideoPlayer]. For the full-screen error dialog in the reel overlay
-  /// use [errorDialogBuilder].
-  final Widget Function(BuildContext context, String error)? errorWidgetBuilder;
-
-  /// Loading widget builder — inline loading indicator shown over the video
-  /// area by [ReelVideoPlayer]. For the overlay-level buffering indicator
-  /// use [bufferingBuilder].
-  final Widget Function(BuildContext context)? loadingWidgetBuilder;
-
-  /// Custom builder for the full-screen error dialog shown by the reel
-  /// overlay when video playback fails. Receives the [ReelModel] currently
-  /// on screen, the raw error message and callbacks to retry playback or
-  /// dismiss the error. When null, a default Material-style dialog is shown.
-  final Widget Function(
-    BuildContext context,
-    ReelModel reel,
-    String error,
-    VoidCallback onRetry,
-    VoidCallback onCancel,
-  )?
-  errorDialogBuilder;
-
-  /// Custom builder for the buffering indicator shown by the reel overlay
-  /// while the video is loading more data. When null, a default
-  /// [CircularProgressIndicator] with "Buffering..." label is shown.
-  final Widget Function(BuildContext context)? bufferingBuilder;
-
-  /// Custom builder for the thumbnail fallback shown by [ReelVideoPlayer]
-  /// when [ReelModel.thumbnailUrl] is null/empty or [Image.network] fails.
-  /// Receives the reel so the host can render a content-specific placeholder
-  /// (logo, gradient, initials, icon). When null, a solid black background
-  /// is used.
-  final Widget Function(BuildContext context, ReelModel reel)?
-  thumbnailFallbackBuilder;
-
-  /// Optional URL builder used as a fallback when the primary thumbnail
-  /// URL fails to load or hasn't produced a frame within
-  /// [thumbnailLoadTimeout]. Receives the [ReelModel] so the host can
-  /// build the URL by reel id. Returns the fallback URL or `null` to
-  /// keep the original. When the field itself is `null` (default), no
-  /// fallback retry is attempted.
-  final String? Function(ReelModel reel)? thumbnailProxyUrlBuilder;
-
-  /// Time to wait for the first frame of the primary thumbnail before
-  /// switching to [thumbnailProxyUrlBuilder]. No effect when the builder
-  /// is null. Default 3 seconds.
-  final Duration thumbnailLoadTimeout;
-
-  /// Minimum size of the clickable area around each action button
-  /// (comment, share, bookmark, download, more). The visual icon stays the
-  /// size of [actionIconSize]; only the hit area is expanded via a transparent
-  /// centered container. Default 44pt matches the pre-2.3.0 behaviour of
-  /// `EdgeInsets.all(8)` around a 28pt icon; raise to 48+ for Apple HIG /
-  /// Material accessibility compliance or larger-finger UX.
-  final double actionMinTapTargetSize;
-
-  /// Size of the icon inside non-like action buttons (visual only).
-  final double actionIconSize;
-
-  /// Size of the like button (`LikeButton.size`) and the heart icon inside.
-  /// Since `LikeButton` does not support a separate hit-area, this value
-  /// controls both visual and tap target for the like button.
-  final double likeButtonSize;
-
-  /// Vertical gap between adjacent action buttons in the column.
-  final double actionSpacing;
-
-  /// Minimum height of the clickable area around each hashtag chip in the
-  /// caption. The visual text stays unchanged; only the hit area is expanded.
-  /// Default `0` disables the expansion (hit area equals text size — matches
-  /// pre-2.3.0 behaviour). Set to 40-48 for comfortable finger targets.
-  final double hashtagMinTapTargetSize;
-
-  /// Whether to show shimmer effect while loading
-  final bool showShimmerWhileLoading;
-
-  /// Custom shimmer configuration
-  final ShimmerConfig? shimmerConfig;
-
-  /// Physics for the PageView
-  final ScrollPhysics? physics;
-
-  /// Page controller for the reels
-  final PageController? pageController;
-
-  /// Whether to enable pull to refresh
-  final bool enablePullToRefresh;
-
-  /// Pull to refresh callback
-  final Future<void> Function()? onRefresh;
-
-  /// Whether to enable infinite scroll
-  final bool enableInfiniteScroll;
-
-  /// Infinite scroll callback (load more reels)
-  final Future<List<String>> Function()? onLoadMore;
-
-  /// Threshold for triggering load more (from the end)
-  final int loadMoreThreshold;
-
-  /// Whether to keep screen awake while playing videos
-  final bool keepScreenAwake;
-
-  /// Video player configuration
+  /// Video player styling and behavior.
   final VideoPlayerConfig videoPlayerConfig;
 
-  /// Primary accent color used for active states and emphasis.
-  final Color accentColor;
+  /// How many adjacent reels to keep warm in the pool.
+  final PreloadConfig preloadConfig;
 
-  /// Default color for caption / username text.
-  final Color textColor;
+  /// LRU disk cache config. When null, defaults are used.
+  final CacheConfig? cacheConfig;
 
-  /// Color of the played portion of the progress bar.
-  final Color progressColor;
+  /// Optional pre-configured [Dio] used by `CacheManager` for thumbnail
+  /// and video prefetch. Pass the host app's HTTP client (e.g. wired
+  /// with `NativeAdapter` + `CronetEngine`) to share its connection pool,
+  /// TLS session cache and interceptors. When null, `CacheManager`
+  /// creates its own plain [Dio].
+  final Dio? httpClient;
 
-  /// Whether to render the "follow" button in the overlay.
-  final bool showFollowButton;
+  /// Whether to show the progress bar at the bottom of each reel.
+  final bool showProgressIndicator;
 
-  /// Whether to render the bookmark action.
-  final bool showBookmarkButton;
+  /// Whether to show the play/pause + bottom controls overlay.
+  final bool showControlsOverlay;
 
-  /// Whether to render the download action.
-  final bool showDownloadButton;
+  /// Auto-hide controls after this duration; `null` keeps them visible.
+  final Duration? controlsAutoHideDuration;
 
-  /// Whether to render the "more options" action.
-  final bool showMoreButton;
+  /// Whether the disk cache is enabled.
+  final bool enableCaching;
 
-  /// Whether to render the comment action.
-  final bool showCommentButton;
+  /// Whether analytics events are collected.
+  final bool enableAnalytics;
 
-  /// Whether to render the bottom controls row (play/pause, time).
-  final bool showBottomControls;
+  /// Scroll physics override for the PageView.
+  final ScrollPhysics? physics;
 
-  /// If `true`, the bookmark action is moved from the side rail
-  /// into the more menu.
-  final bool bookmarkInMoreMenu;
+  /// Externally owned PageController, or `null` to use the controller's
+  /// internal one.
+  final PageController? pageController;
 
-  /// If `true`, the download action is moved from the side rail
-  /// into the more menu.
-  final bool downloadInMoreMenu;
+  /// Whether to wrap the feed in a [RefreshIndicator].
+  final bool enablePullToRefresh;
 
-  /// Background color of the follow button in its idle state.
-  final Color followButtonColor;
+  /// Invoked by the [RefreshIndicator] when the user pulls down.
+  final Future<void> Function()? onRefresh;
 
-  /// Background color of the follow button once the user is following.
-  final Color followingButtonColor;
+  /// Whether the feed can load more reels as the user scrolls.
+  final bool enableInfiniteScroll;
 
-  /// Maximum number of lines shown in the caption before truncation.
-  final int maxCaptionLines;
+  /// Returns the next page of reel ids. Called when the user is within
+  /// [loadMoreThreshold] from the end.
+  final Future<List<String>> Function()? onLoadMore;
 
-  /// Whether hashtags are rendered as chips under the caption.
-  final bool showHashtags;
+  /// Distance from the end of the feed at which [onLoadMore] fires.
+  final int loadMoreThreshold;
 
-  /// Extra entries appended to the more menu.
-  final List<CustomAction> customActions;
-
-  /// Invoked when the comment action is tapped. Overrides default sheet.
-  final void Function(ReelModel)? onCommentTap;
-
-  /// Invoked when the share action is tapped.
-  final void Function(ReelModel)? onShareTap;
-
-  /// Invoked when the download action is tapped.
-  final void Function(ReelModel)? onDownloadTap;
-
-  /// Invoked when a hashtag chip is tapped. Receives the tag without
-  /// the leading `#`.
-  final void Function(String)? onHashtagTap;
-
-  /// Invoked when the "report" entry in the more menu is tapped.
-  final void Function(ReelModel)? onReportTap;
-
-  /// Invoked when the "block" entry in the more menu is tapped.
-  final void Function(ReelModel)? onBlockTap;
-
-  /// Invoked when the "copy link" entry in the more menu is tapped.
-  final void Function(ReelModel)? onCopyLinkTap;
-
-  /// Localized label for the "report" entry in the more menu.
-  final String reportLabel;
-
-  /// Localized label for the "block" entry in the more menu.
-  final String blockLabel;
-
-  /// Localized label for the "copy link" entry in the more menu.
-  final String copyLinkLabel;
+  /// Whether to keep the screen on while a video is playing.
+  final bool keepScreenAwake;
 
   /// Whether videos should start playing automatically when they
   /// become active.
@@ -337,56 +142,25 @@ class ReelConfig {
   /// Initial output volume in the range `[0, 1]`.
   final double volume;
 
-  /// Invoked when playback starts.
-  final VoidCallback? onPlay;
-
-  /// Invoked when playback pauses.
-  final VoidCallback? onPause;
-
-  /// Invoked when the user seeks. Receives the new playback position.
-  final void Function(Duration)? onSeek;
-
   /// Horizontal padding around the progress bar in logical pixels.
   final double progressBarPadding;
 
-  /// Bottom inset for the overlay content (user info, actions, progress
-  /// bar). Use it to lift the content above a tab bar or similar UI.
-  final double contentBottomPadding;
-
   /// Returns a copy with the provided fields replaced.
   ReelConfig copyWith({
-    Color? backgroundColor,
-    bool? showProgressIndicator,
+    ReelStylingConfig? styling,
+    ReelActionsConfig? actions,
+    ReelOverlayBuildersConfig? builders,
+    ReelInteractionCallbacks? callbacks,
     ProgressIndicatorConfig? progressIndicatorConfig,
+    VideoPlayerConfig? videoPlayerConfig,
+    PreloadConfig? preloadConfig,
+    CacheConfig? cacheConfig,
+    Dio? httpClient,
+    bool? showProgressIndicator,
     bool? showControlsOverlay,
     Duration? controlsAutoHideDuration,
     bool? enableCaching,
-    CacheConfig? cacheConfig,
-    Dio? httpClient,
     bool? enableAnalytics,
-    PreloadConfig? preloadConfig,
-    Widget Function(BuildContext context, String error)? errorWidgetBuilder,
-    Widget Function(BuildContext context)? loadingWidgetBuilder,
-    Widget Function(
-      BuildContext context,
-      ReelModel reel,
-      String error,
-      VoidCallback onRetry,
-      VoidCallback onCancel,
-    )?
-    errorDialogBuilder,
-    Widget Function(BuildContext context)? bufferingBuilder,
-    Widget Function(BuildContext context, ReelModel reel)?
-    thumbnailFallbackBuilder,
-    String? Function(ReelModel reel)? thumbnailProxyUrlBuilder,
-    Duration? thumbnailLoadTimeout,
-    double? actionMinTapTargetSize,
-    double? actionIconSize,
-    double? likeButtonSize,
-    double? actionSpacing,
-    double? hashtagMinTapTargetSize,
-    bool? showShimmerWhileLoading,
-    ShimmerConfig? shimmerConfig,
     ScrollPhysics? physics,
     PageController? pageController,
     bool? enablePullToRefresh,
@@ -395,75 +169,29 @@ class ReelConfig {
     Future<List<String>> Function()? onLoadMore,
     int? loadMoreThreshold,
     bool? keepScreenAwake,
-    VideoPlayerConfig? videoPlayerConfig,
-    Color? accentColor,
-    Color? textColor,
-    Color? progressColor,
-    bool? showFollowButton,
-    bool? showBookmarkButton,
-    bool? showDownloadButton,
-    bool? showMoreButton,
-    bool? showCommentButton,
-    bool? showBottomControls,
-    bool? bookmarkInMoreMenu,
-    bool? downloadInMoreMenu,
-    Color? followButtonColor,
-    Color? followingButtonColor,
-    int? maxCaptionLines,
-    bool? showHashtags,
-    List<CustomAction>? customActions,
-    void Function(ReelModel)? onCommentTap,
-    void Function(ReelModel)? onShareTap,
-    void Function(ReelModel)? onDownloadTap,
-    void Function(String)? onHashtagTap,
-    void Function(ReelModel)? onReportTap,
-    void Function(ReelModel)? onBlockTap,
-    void Function(ReelModel)? onCopyLinkTap,
-    String? reportLabel,
-    String? blockLabel,
-    String? copyLinkLabel,
     bool? autoPlay,
     bool? loop,
     double? volume,
-    VoidCallback? onPlay,
-    VoidCallback? onPause,
-    void Function(Duration)? onSeek,
     double? progressBarPadding,
-    double? contentBottomPadding,
   }) {
     return ReelConfig(
-      backgroundColor: backgroundColor ?? this.backgroundColor,
-      showProgressIndicator:
-          showProgressIndicator ?? this.showProgressIndicator,
+      styling: styling ?? this.styling,
+      actions: actions ?? this.actions,
+      builders: builders ?? this.builders,
+      callbacks: callbacks ?? this.callbacks,
       progressIndicatorConfig:
           progressIndicatorConfig ?? this.progressIndicatorConfig,
+      videoPlayerConfig: videoPlayerConfig ?? this.videoPlayerConfig,
+      preloadConfig: preloadConfig ?? this.preloadConfig,
+      cacheConfig: cacheConfig ?? this.cacheConfig,
+      httpClient: httpClient ?? this.httpClient,
+      showProgressIndicator:
+          showProgressIndicator ?? this.showProgressIndicator,
       showControlsOverlay: showControlsOverlay ?? this.showControlsOverlay,
       controlsAutoHideDuration:
           controlsAutoHideDuration ?? this.controlsAutoHideDuration,
       enableCaching: enableCaching ?? this.enableCaching,
-      cacheConfig: cacheConfig ?? this.cacheConfig,
-      httpClient: httpClient ?? this.httpClient,
       enableAnalytics: enableAnalytics ?? this.enableAnalytics,
-      preloadConfig: preloadConfig ?? this.preloadConfig,
-      errorWidgetBuilder: errorWidgetBuilder ?? this.errorWidgetBuilder,
-      loadingWidgetBuilder: loadingWidgetBuilder ?? this.loadingWidgetBuilder,
-      errorDialogBuilder: errorDialogBuilder ?? this.errorDialogBuilder,
-      bufferingBuilder: bufferingBuilder ?? this.bufferingBuilder,
-      thumbnailFallbackBuilder:
-          thumbnailFallbackBuilder ?? this.thumbnailFallbackBuilder,
-      thumbnailProxyUrlBuilder:
-          thumbnailProxyUrlBuilder ?? this.thumbnailProxyUrlBuilder,
-      thumbnailLoadTimeout: thumbnailLoadTimeout ?? this.thumbnailLoadTimeout,
-      actionMinTapTargetSize:
-          actionMinTapTargetSize ?? this.actionMinTapTargetSize,
-      actionIconSize: actionIconSize ?? this.actionIconSize,
-      likeButtonSize: likeButtonSize ?? this.likeButtonSize,
-      actionSpacing: actionSpacing ?? this.actionSpacing,
-      hashtagMinTapTargetSize:
-          hashtagMinTapTargetSize ?? this.hashtagMinTapTargetSize,
-      showShimmerWhileLoading:
-          showShimmerWhileLoading ?? this.showShimmerWhileLoading,
-      shimmerConfig: shimmerConfig ?? this.shimmerConfig,
       physics: physics ?? this.physics,
       pageController: pageController ?? this.pageController,
       enablePullToRefresh: enablePullToRefresh ?? this.enablePullToRefresh,
@@ -472,41 +200,10 @@ class ReelConfig {
       onLoadMore: onLoadMore ?? this.onLoadMore,
       loadMoreThreshold: loadMoreThreshold ?? this.loadMoreThreshold,
       keepScreenAwake: keepScreenAwake ?? this.keepScreenAwake,
-      videoPlayerConfig: videoPlayerConfig ?? this.videoPlayerConfig,
-      accentColor: accentColor ?? this.accentColor,
-      textColor: textColor ?? this.textColor,
-      progressColor: progressColor ?? this.progressColor,
-      showFollowButton: showFollowButton ?? this.showFollowButton,
-      showBookmarkButton: showBookmarkButton ?? this.showBookmarkButton,
-      showDownloadButton: showDownloadButton ?? this.showDownloadButton,
-      showMoreButton: showMoreButton ?? this.showMoreButton,
-      showCommentButton: showCommentButton ?? this.showCommentButton,
-      showBottomControls: showBottomControls ?? this.showBottomControls,
-      bookmarkInMoreMenu: bookmarkInMoreMenu ?? this.bookmarkInMoreMenu,
-      downloadInMoreMenu: downloadInMoreMenu ?? this.downloadInMoreMenu,
-      followButtonColor: followButtonColor ?? this.followButtonColor,
-      followingButtonColor: followingButtonColor ?? this.followingButtonColor,
-      maxCaptionLines: maxCaptionLines ?? this.maxCaptionLines,
-      showHashtags: showHashtags ?? this.showHashtags,
-      customActions: customActions ?? this.customActions,
-      onCommentTap: onCommentTap ?? this.onCommentTap,
-      onShareTap: onShareTap ?? this.onShareTap,
-      onDownloadTap: onDownloadTap ?? this.onDownloadTap,
-      onHashtagTap: onHashtagTap ?? this.onHashtagTap,
-      onReportTap: onReportTap ?? this.onReportTap,
-      onBlockTap: onBlockTap ?? this.onBlockTap,
-      onCopyLinkTap: onCopyLinkTap ?? this.onCopyLinkTap,
-      reportLabel: reportLabel ?? this.reportLabel,
-      blockLabel: blockLabel ?? this.blockLabel,
-      copyLinkLabel: copyLinkLabel ?? this.copyLinkLabel,
       autoPlay: autoPlay ?? this.autoPlay,
       loop: loop ?? this.loop,
       volume: volume ?? this.volume,
-      onPlay: onPlay ?? this.onPlay,
-      onPause: onPause ?? this.onPause,
-      onSeek: onSeek ?? this.onSeek,
       progressBarPadding: progressBarPadding ?? this.progressBarPadding,
-      contentBottomPadding: contentBottomPadding ?? this.contentBottomPadding,
     );
   }
 }

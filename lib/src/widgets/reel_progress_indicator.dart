@@ -7,7 +7,9 @@ import 'package:get/get.dart';
 import 'package:snap_reels/src/controllers/reel_controller.dart';
 import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
-import 'package:snap_reels/src/utils/reel_utils.dart';
+import 'package:snap_reels/src/widgets/progress_track_bar.dart';
+import 'package:snap_reels/src/widgets/reel_progress_time_labels.dart';
+import 'package:snap_reels/src/widgets/scrub_thumbnail_preview.dart';
 
 /// Video progress indicator with seeking, thumbnails, and animations.
 class ReelProgressIndicator extends StatefulWidget {
@@ -123,7 +125,11 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
           _buildProgressTrack(controller, displayProgress, duration, position),
           if (widget.showTime) ...[
             const SizedBox(height: 8),
-            _buildTimeIndicators(position, duration),
+            ReelProgressTimeLabels(
+              position: position,
+              duration: duration,
+              textColor: widget.config.styling.textColor,
+            ),
           ],
         ],
       );
@@ -132,113 +138,13 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
 
   Widget _buildThumbnailPreview() {
     return Obx(() {
-      if (!_showThumbnail.value || _thumbnailPosition.value == null) {
+      final anchor = _thumbnailPosition.value;
+      if (!_showThumbnail.value || anchor == null) {
         return const SizedBox.shrink();
       }
-
-      final position = _thumbnailPosition.value!;
-      final time = _thumbnailTime.value;
-      final screenWidth = MediaQuery.of(context).size.width;
-
-      const thumbnailWidth = 150.0;
-      final safeLeft = (position - thumbnailWidth / 2).clamp(
-        16.0,
-        screenWidth - thumbnailWidth - 16.0,
-      );
-
-      return Positioned(
-        bottom: 40,
-        left: safeLeft,
-        child: TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 150),
-          tween: Tween(begin: 0, end: 1),
-          builder: (context, value, child) {
-            return Transform.scale(
-              scale: 0.8 + (0.2 * value),
-              child: Opacity(
-                opacity: value,
-                child: Container(
-                  width: thumbnailWidth,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white30, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        spreadRadius: 3,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.grey.shade800,
-                                Colors.grey.shade900,
-                              ],
-                            ),
-                          ),
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.play_circle_outline,
-                                  color: Colors.white70,
-                                  size: 28,
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Preview',
-                                  style: TextStyle(
-                                    color: Colors.white60,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: const BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            ReelUtils.formatDuration(time),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+      return ScrubThumbnailPreview(
+        anchorLeft: anchor,
+        time: _thumbnailTime.value,
       );
     });
   }
@@ -269,35 +175,10 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
               onPanEnd: _handlePanEnd,
               child: SizedBox(
                 height: 20,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      height: _trackHeightAnimation.value,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(
-                          _trackHeightAnimation.value / 2,
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: progress.clamp(0.0, 1.0),
-                        child: Container(
-                          height: _trackHeightAnimation.value,
-                          decoration: BoxDecoration(
-                            color: widget.config.progressColor,
-                            borderRadius: BorderRadius.circular(
-                              _trackHeightAnimation.value / 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                child: ProgressTrackBar(
+                  progress: progress,
+                  trackHeight: _trackHeightAnimation.value,
+                  progressColor: widget.config.styling.progressColor,
                 ),
               ),
             ),
@@ -395,32 +276,5 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     _thumbnailPosition.value = null;
     unawaited(_thumbAnimationController.reverse());
     unawaited(_scaleAnimationController.reverse());
-  }
-
-  Widget _buildTimeIndicators(Duration position, Duration duration) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            ReelUtils.formatDuration(position),
-            style: TextStyle(
-              color: widget.config.textColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            ReelUtils.formatDuration(duration),
-            style: TextStyle(
-              color: widget.config.textColor.withValues(alpha: 0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

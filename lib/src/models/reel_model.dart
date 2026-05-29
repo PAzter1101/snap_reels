@@ -1,69 +1,18 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'package:snap_reels/src/models/converters.dart';
+import 'package:snap_reels/src/models/reel_audio.dart';
+import 'package:snap_reels/src/models/reel_user.dart';
+import 'package:snap_reels/src/models/video_format.dart';
+import 'package:snap_reels/src/models/video_source.dart';
+
+export 'reel_audio.dart';
+export 'reel_user.dart';
+export 'video_format.dart';
+export 'video_size.dart';
+export 'video_source.dart';
 
 part 'reel_model.freezed.dart';
 part 'reel_model.g.dart';
-
-/// Supported video streaming formats.
-enum VideoFormat {
-  /// Progressive MP4 over HTTP.
-  mp4,
-
-  /// HTTP Live Streaming (`.m3u8`).
-  hls,
-
-  /// Dynamic Adaptive Streaming over HTTP (`.mpd`).
-  dash
-  ;
-
-  /// Parses a string representation; falls back to [VideoFormat.hls] for
-  /// unknown values to preserve backward compatibility.
-  static VideoFormat fromString(String format) {
-    switch (format.toLowerCase()) {
-      case 'mp4':
-        return VideoFormat.mp4;
-      case 'hls':
-        return VideoFormat.hls;
-      case 'dash':
-        return VideoFormat.dash;
-      default:
-        return VideoFormat.hls;
-    }
-  }
-}
-
-/// Video source configuration for different streaming formats.
-@freezed
-abstract class VideoSource with _$VideoSource {
-  /// Creates a video source. [url] is the primary one;
-  /// [alternativeSources] holds optional fallbacks per [VideoFormat].
-  const factory VideoSource({
-    required String url,
-    @Default(VideoFormat.hls) VideoFormat format,
-    @VideoFormatMapConverter() Map<VideoFormat, String>? alternativeSources,
-    String? quality,
-    int? bitrate,
-    Size? dimensions,
-  }) = _VideoSource;
-
-  const VideoSource._();
-
-  /// Deserializes a [VideoSource] from JSON.
-  factory VideoSource.fromJson(Map<String, Object?> json) =>
-      _$VideoSourceFromJson(json);
-
-  /// Returns the URL for [target]; falls back to the primary [url] when no
-  /// dedicated alternative is registered.
-  String getUrlForFormat(VideoFormat target) {
-    if (format == target) return url;
-    return alternativeSources?[target] ?? url;
-  }
-
-  /// Whether this source can serve the given [target] format.
-  bool hasFormat(VideoFormat target) =>
-      format == target || alternativeSources?.containsKey(target) == true;
-}
 
 /// A single reel item with all its metadata.
 @freezed
@@ -263,51 +212,4 @@ abstract class ReelModel with _$ReelModel {
   String? getUrlForFormat(VideoFormat format) => videoSource.hasFormat(format)
       ? videoSource.getUrlForFormat(format)
       : null;
-}
-
-/// User information attached to a reel.
-@freezed
-abstract class ReelUser with _$ReelUser {
-  /// Creates a [ReelUser].
-  const factory ReelUser({
-    required String id,
-    required String username,
-    String? displayName,
-    String? profilePictureUrl,
-    @Default(false) bool isVerified,
-    @Default(false) bool isFollowing,
-    @Default(0) int followersCount,
-    @Default(0) int followingCount,
-  }) = _ReelUser;
-
-  /// Deserializes a [ReelUser] from JSON.
-  factory ReelUser.fromJson(Map<String, Object?> json) =>
-      _$ReelUserFromJson(json);
-}
-
-/// Audio information attached to a reel.
-@freezed
-abstract class ReelAudio with _$ReelAudio {
-  /// Creates a [ReelAudio].
-  const factory ReelAudio({
-    String? title,
-    String? artist,
-    String? coverUrl,
-    String? audioUrl,
-    int? duration,
-  }) = _ReelAudio;
-
-  /// Deserializes a [ReelAudio] from JSON.
-  factory ReelAudio.fromJson(Map<String, Object?> json) =>
-      _$ReelAudioFromJson(json);
-}
-
-/// Width/height pair for a video frame.
-@freezed
-abstract class Size with _$Size {
-  /// Creates a [Size] from positional dimensions.
-  const factory Size(double width, double height) = _Size;
-
-  /// Deserializes a [Size] from JSON.
-  factory Size.fromJson(Map<String, Object?> json) => _$SizeFromJson(json);
 }

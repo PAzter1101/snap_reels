@@ -7,8 +7,7 @@ import 'package:get/get.dart';
 import 'package:snap_reels/src/controllers/reel_controller.dart';
 import 'package:snap_reels/src/models/reel_config.dart';
 import 'package:snap_reels/src/models/reel_model.dart';
-import 'package:snap_reels/src/widgets/reel_overlay.dart';
-import 'package:snap_reels/src/widgets/reel_video_player.dart';
+import 'package:snap_reels/src/widgets/snap_reel_item.dart';
 
 /// The main SnapReels widget for displaying vertical video reels
 class SnapReels extends StatefulWidget {
@@ -203,7 +202,7 @@ class _SnapReelsState extends State<SnapReels>
     super.build(context);
 
     return ColoredBox(
-      color: widget.config.backgroundColor,
+      color: widget.config.styling.backgroundColor,
       child: widget.config.enablePullToRefresh
           ? RefreshIndicator(
               onRefresh: widget.config.onRefresh ?? () async {},
@@ -226,78 +225,24 @@ class _SnapReelsState extends State<SnapReels>
       itemBuilder: (context, index) {
         if (index >= widget.reels.length) return const SizedBox.shrink();
         final reel = widget.reels[index];
-        return _buildReelItem(reel, index);
-      },
-    );
-  }
-
-  Widget _buildReelItem(ReelModel reel, int index) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ReelVideoPlayer(
-          key: ValueKey('reel_video_${reel.id}'),
+        return SnapReelItem(
           reel: reel,
           controller: _controller,
           config: widget.config,
-          errorBuilder: (context, reel, error) {
-            widget.onVideoError?.call(reel, error);
-            return widget.errorBuilder?.call(context, reel, error) ??
-                const SizedBox.shrink();
-          },
+          overlayBuilder: widget.overlayBuilder,
+          errorBuilder: widget.errorBuilder,
           loadingBuilder: widget.loadingBuilder,
-        ),
-        if (widget.overlayBuilder != null)
-          widget.overlayBuilder!(context, reel, _controller)
-        else
-          ReelOverlay(
-            reel: reel,
-            config: widget.config,
-            controller: _controller,
-            onTap: widget.onTap != null
-                ? () => widget.onTap!(reel, _controller.currentPosition.value)
-                : null,
-            onLongPress: widget.onLongPress != null
-                ? () => widget.onLongPress!(
-                    reel,
-                    _controller.currentPosition.value,
-                  )
-                : null,
-            onLike: () => widget.onReelLiked?.call(reel),
-            onShare: () => widget.onReelShared?.call(reel),
-            onComment: () => widget.onReelCommented?.call(reel),
-            onFollow: () => widget.onUserFollowed?.call(reel.user!),
-            onBlock: () => widget.onUserBlocked?.call(reel.user!),
-            onCompleted: () => widget.onVideoCompleted?.call(reel),
-          ),
-      ],
-    );
-  }
-}
-
-/// Extension methods for SnapReels
-extension SnapReelsExtension on SnapReels {
-  /// Create SnapReels from video URLs
-  static SnapReels fromUrls(
-    List<String> videoUrls, {
-    ReelConfig config = const ReelConfig(),
-    int initialIndex = 0,
-    void Function(int index, ReelModel reel)? onPageChanged,
-    void Function(ReelModel reel, Duration position)? onVideoTapped,
-  }) {
-    final reels = videoUrls.asMap().entries.map((entry) {
-      return ReelModel(
-        id: 'reel_${entry.key}_${DateTime.now().millisecondsSinceEpoch}',
-        videoSource: VideoSource(url: entry.value),
-      );
-    }).toList();
-
-    return SnapReels(
-      reels: reels,
-      config: config,
-      initialIndex: initialIndex,
-      onPageChanged: onPageChanged,
-      onTap: onVideoTapped,
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          onLike: widget.onReelLiked,
+          onShare: widget.onReelShared,
+          onComment: widget.onReelCommented,
+          onFollow: widget.onUserFollowed,
+          onBlock: widget.onUserBlocked,
+          onCompleted: widget.onVideoCompleted,
+          onVideoError: widget.onVideoError,
+        );
+      },
     );
   }
 }
