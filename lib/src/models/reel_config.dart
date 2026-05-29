@@ -1,9 +1,12 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'reel_model.dart';
-import 'cache_config.dart';
-import 'progress_config.dart';
-import 'video_player_config.dart';
+
+import 'package:dio/dio.dart';
+
+import 'package:snap_reels/snap_reels.dart' show CacheManager, ReelVideoPlayer;
+import 'package:snap_reels/src/models/cache_config.dart';
+import 'package:snap_reels/src/models/progress_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/models/video_player_config.dart';
 
 export 'cache_config.dart';
 export 'progress_config.dart';
@@ -12,19 +15,89 @@ export 'video_player_config.dart';
 
 /// Custom action for the more menu
 class CustomAction {
-  final IconData icon;
-  final String title;
-  final void Function(ReelModel) onTap;
-
   const CustomAction({
     required this.icon,
     required this.title,
     required this.onTap,
   });
+  final IconData icon;
+  final String title;
+  final void Function(ReelModel) onTap;
 }
 
 /// Main configuration class for reels
 class ReelConfig {
+  const ReelConfig({
+    this.backgroundColor = Colors.black,
+    this.showProgressIndicator = true,
+    this.progressIndicatorConfig = const ProgressIndicatorConfig(),
+    this.showControlsOverlay = true,
+    this.controlsAutoHideDuration = const Duration(seconds: 3),
+    this.enableCaching = true,
+    this.cacheConfig,
+    this.httpClient,
+    this.enableAnalytics = false,
+    this.preloadConfig = const PreloadConfig(),
+    this.errorWidgetBuilder,
+    this.loadingWidgetBuilder,
+    this.errorDialogBuilder,
+    this.bufferingBuilder,
+    this.thumbnailFallbackBuilder,
+    this.thumbnailProxyUrlBuilder,
+    this.thumbnailLoadTimeout = const Duration(seconds: 3),
+    this.actionMinTapTargetSize = 44,
+    this.actionIconSize = 28,
+    this.likeButtonSize = 32,
+    this.actionSpacing = 16,
+    this.hashtagMinTapTargetSize = 0,
+    this.showShimmerWhileLoading = true,
+    this.shimmerConfig,
+    this.physics,
+    this.pageController,
+    this.enablePullToRefresh = false,
+    this.onRefresh,
+    this.enableInfiniteScroll = false,
+    this.onLoadMore,
+    this.loadMoreThreshold = 3,
+    this.keepScreenAwake = true,
+    this.videoPlayerConfig = const VideoPlayerConfig(),
+    this.accentColor = Colors.red,
+    this.textColor = Colors.white,
+    this.progressColor = Colors.white,
+    this.showFollowButton = true,
+    this.showBookmarkButton = true,
+    this.showDownloadButton = true,
+    this.showMoreButton = true,
+    this.showCommentButton = true,
+    this.showBottomControls = false,
+    this.bookmarkInMoreMenu = true,
+    this.downloadInMoreMenu = true,
+    this.followButtonColor = Colors.white,
+    this.followingButtonColor = Colors.white70,
+    this.maxCaptionLines = 3,
+    this.showHashtags = true,
+    this.customActions = const [],
+    this.onCommentTap,
+    this.onShareTap,
+    this.onDownloadTap,
+    this.onHashtagTap,
+    this.onReportTap,
+    this.onBlockTap,
+    this.onCopyLinkTap,
+    this.reportLabel = 'Report',
+    this.blockLabel = 'Block',
+    this.copyLinkLabel = 'Copy link',
+    this.preloadRange = 1,
+    this.autoPlay = true,
+    this.loop = true,
+    this.volume = 1.0,
+    this.onPlay,
+    this.onPause,
+    this.onSeek,
+    this.progressBarPadding = 20.0,
+    this.contentBottomPadding = 0.0,
+  });
+
   /// Background color for the reels container
   final Color backgroundColor;
 
@@ -79,7 +152,8 @@ class ReelConfig {
     String error,
     VoidCallback onRetry,
     VoidCallback onCancel,
-  )? errorDialogBuilder;
+  )?
+  errorDialogBuilder;
 
   /// Custom builder for the buffering indicator shown by the reel overlay
   /// while the video is loading more data. When null, a default
@@ -92,7 +166,7 @@ class ReelConfig {
   /// (logo, gradient, initials, icon). When null, a solid black background
   /// is used.
   final Widget Function(BuildContext context, ReelModel reel)?
-      thumbnailFallbackBuilder;
+  thumbnailFallbackBuilder;
 
   /// Optional URL builder used as a fallback when the primary thumbnail
   /// URL fails to load or hasn't produced a frame within
@@ -223,77 +297,6 @@ class ReelConfig {
   /// Используйте для поднятия контента над tab bar или другими элементами UI.
   final double contentBottomPadding;
 
-  const ReelConfig({
-    this.backgroundColor = Colors.black,
-    this.showProgressIndicator = true,
-    this.progressIndicatorConfig = const ProgressIndicatorConfig(),
-    this.showControlsOverlay = true,
-    this.controlsAutoHideDuration = const Duration(seconds: 3),
-    this.enableCaching = true,
-    this.cacheConfig,
-    this.httpClient,
-    this.enableAnalytics = false,
-    this.preloadConfig = const PreloadConfig(),
-    this.errorWidgetBuilder,
-    this.loadingWidgetBuilder,
-    this.errorDialogBuilder,
-    this.bufferingBuilder,
-    this.thumbnailFallbackBuilder,
-    this.thumbnailProxyUrlBuilder,
-    this.thumbnailLoadTimeout = const Duration(seconds: 3),
-    this.actionMinTapTargetSize = 44,
-    this.actionIconSize = 28,
-    this.likeButtonSize = 32,
-    this.actionSpacing = 16,
-    this.hashtagMinTapTargetSize = 0,
-    this.showShimmerWhileLoading = true,
-    this.shimmerConfig,
-    this.physics,
-    this.pageController,
-    this.enablePullToRefresh = false,
-    this.onRefresh,
-    this.enableInfiniteScroll = false,
-    this.onLoadMore,
-    this.loadMoreThreshold = 3,
-    this.keepScreenAwake = true,
-    this.videoPlayerConfig = const VideoPlayerConfig(),
-    this.accentColor = Colors.red,
-    this.textColor = Colors.white,
-    this.progressColor = Colors.white,
-    this.showFollowButton = true,
-    this.showBookmarkButton = true,
-    this.showDownloadButton = true,
-    this.showMoreButton = true,
-    this.showCommentButton = true,
-    this.showBottomControls = false,
-    this.bookmarkInMoreMenu = true,
-    this.downloadInMoreMenu = true,
-    this.followButtonColor = Colors.white,
-    this.followingButtonColor = Colors.white70,
-    this.maxCaptionLines = 3,
-    this.showHashtags = true,
-    this.customActions = const [],
-    this.onCommentTap,
-    this.onShareTap,
-    this.onDownloadTap,
-    this.onHashtagTap,
-    this.onReportTap,
-    this.onBlockTap,
-    this.onCopyLinkTap,
-    this.reportLabel = 'Report',
-    this.blockLabel = 'Block',
-    this.copyLinkLabel = 'Copy link',
-    this.preloadRange = 1,
-    this.autoPlay = true,
-    this.loop = true,
-    this.volume = 1.0,
-    this.onPlay,
-    this.onPause,
-    this.onSeek,
-    this.progressBarPadding = 20.0,
-    this.contentBottomPadding = 0.0,
-  });
-
   ReelConfig copyWith({
     Color? backgroundColor,
     bool? showProgressIndicator,
@@ -313,10 +316,11 @@ class ReelConfig {
       String error,
       VoidCallback onRetry,
       VoidCallback onCancel,
-    )? errorDialogBuilder,
+    )?
+    errorDialogBuilder,
     Widget Function(BuildContext context)? bufferingBuilder,
     Widget Function(BuildContext context, ReelModel reel)?
-        thumbnailFallbackBuilder,
+    thumbnailFallbackBuilder,
     String? Function(ReelModel reel)? thumbnailProxyUrlBuilder,
     Duration? thumbnailLoadTimeout,
     double? actionMinTapTargetSize,
@@ -393,8 +397,7 @@ class ReelConfig {
           thumbnailFallbackBuilder ?? this.thumbnailFallbackBuilder,
       thumbnailProxyUrlBuilder:
           thumbnailProxyUrlBuilder ?? this.thumbnailProxyUrlBuilder,
-      thumbnailLoadTimeout:
-          thumbnailLoadTimeout ?? this.thumbnailLoadTimeout,
+      thumbnailLoadTimeout: thumbnailLoadTimeout ?? this.thumbnailLoadTimeout,
       actionMinTapTargetSize:
           actionMinTapTargetSize ?? this.actionMinTapTargetSize,
       actionIconSize: actionIconSize ?? this.actionIconSize,

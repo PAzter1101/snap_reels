@@ -1,9 +1,27 @@
 import 'package:flutter/material.dart';
 
-import 'streaming_config.dart';
+import 'package:snap_reels/src/models/streaming_config.dart';
 
 /// Configuration for video player
 class VideoPlayerConfig {
+  const VideoPlayerConfig({
+    this.showControls = false,
+    this.allowFullScreen = false,
+    this.showTitle = false,
+    this.showSubtitle = false,
+    this.aspectRatio,
+    this.videoFit = BoxFit.cover,
+    this.startMuted = false,
+    this.defaultVolume = 1.0,
+    this.playbackSpeeds = const [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+    this.defaultPlaybackSpeed = 1.0,
+    this.showPlaybackSpeedControls = false,
+    this.bufferConfig = const VideoBufferConfig(),
+    this.streamingConfig = const StreamingConfig(),
+    this.enableHardwareAcceleration = true,
+    this.enablePictureInPicture = false,
+  });
+
   /// Whether to show video controls
   final bool showControls;
 
@@ -49,24 +67,6 @@ class VideoPlayerConfig {
   /// Enable picture-in-picture mode
   final bool enablePictureInPicture;
 
-  const VideoPlayerConfig({
-    this.showControls = false,
-    this.allowFullScreen = false,
-    this.showTitle = false,
-    this.showSubtitle = false,
-    this.aspectRatio,
-    this.videoFit = BoxFit.cover,
-    this.startMuted = false,
-    this.defaultVolume = 1.0,
-    this.playbackSpeeds = const [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
-    this.defaultPlaybackSpeed = 1.0,
-    this.showPlaybackSpeedControls = false,
-    this.bufferConfig = const VideoBufferConfig(),
-    this.streamingConfig = const StreamingConfig(),
-    this.enableHardwareAcceleration = true,
-    this.enablePictureInPicture = false,
-  });
-
   VideoPlayerConfig copyWith({
     bool? showControls,
     bool? allowFullScreen,
@@ -109,6 +109,13 @@ class VideoPlayerConfig {
 
 /// Configuration for video buffering
 class VideoBufferConfig {
+  const VideoBufferConfig({
+    this.minBufferDuration = const Duration(seconds: 15),
+    this.maxBufferDuration = const Duration(seconds: 50),
+    this.bufferForPlaybackDuration = const Duration(milliseconds: 2500),
+    this.bufferForPlaybackAfterRebufferDuration = const Duration(seconds: 5),
+  });
+
   /// Minimum buffer duration
   final Duration minBufferDuration;
 
@@ -120,11 +127,4 @@ class VideoBufferConfig {
 
   /// Buffer duration after rebuffering
   final Duration bufferForPlaybackAfterRebufferDuration;
-
-  const VideoBufferConfig({
-    this.minBufferDuration = const Duration(seconds: 15),
-    this.maxBufferDuration = const Duration(seconds: 50),
-    this.bufferForPlaybackDuration = const Duration(milliseconds: 2500),
-    this.bufferForPlaybackAfterRebufferDuration = const Duration(seconds: 5),
-  });
 }

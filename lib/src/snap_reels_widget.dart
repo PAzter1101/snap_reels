@@ -1,14 +1,42 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import 'controllers/reel_controller.dart';
-import 'models/reel_config.dart';
-import 'models/reel_model.dart';
-import 'widgets/reel_overlay.dart';
-import 'widgets/reel_video_player.dart';
+import 'package:snap_reels/src/controllers/reel_controller.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/widgets/reel_overlay.dart';
+import 'package:snap_reels/src/widgets/reel_video_player.dart';
 
 /// The main SnapReels widget for displaying vertical video reels
 class SnapReels extends StatefulWidget {
+  const SnapReels({
+    required this.reels,
+    super.key,
+    this.config = const ReelConfig(),
+    this.initialIndex = 0,
+    this.controller,
+    this.onReelChanged,
+    this.onReelLiked,
+    this.onReelShared,
+    this.onReelCommented,
+    this.onUserFollowed,
+    this.onUserBlocked,
+    this.onVideoCompleted,
+    this.onVideoError,
+    this.onPageChanged,
+    this.onTap,
+    this.onLongPress,
+    this.onLikeTapped,
+    this.onCommentTapped,
+    this.onShareTapped,
+    this.onFollowTapped,
+    this.onUserProfileTapped,
+    this.overlayBuilder,
+    this.errorBuilder,
+    this.loadingBuilder,
+  });
+
   /// List of reel models to display
   final List<ReelModel> reels;
 
@@ -44,12 +72,15 @@ class SnapReels extends StatefulWidget {
 
   /// Custom overlay builder
   final Widget Function(
-          BuildContext context, ReelModel reel, ReelController controller)?
-      overlayBuilder;
+    BuildContext context,
+    ReelModel reel,
+    ReelController controller,
+  )?
+  overlayBuilder;
 
   /// Custom error widget builder
   final Widget Function(BuildContext context, ReelModel reel, String error)?
-      errorBuilder;
+  errorBuilder;
 
   /// Custom loading widget builder
   final Widget Function(BuildContext context, ReelModel reel)? loadingBuilder;
@@ -63,33 +94,6 @@ class SnapReels extends StatefulWidget {
   final void Function(ReelUser user)? onUserBlocked;
   final void Function(ReelModel reel)? onVideoCompleted;
   final void Function(ReelModel reel, Object error)? onVideoError;
-
-  const SnapReels({
-    super.key,
-    required this.reels,
-    this.config = const ReelConfig(),
-    this.initialIndex = 0,
-    this.controller,
-    this.onReelChanged,
-    this.onReelLiked,
-    this.onReelShared,
-    this.onReelCommented,
-    this.onUserFollowed,
-    this.onUserBlocked,
-    this.onVideoCompleted,
-    this.onVideoError,
-    this.onPageChanged,
-    this.onTap,
-    this.onLongPress,
-    this.onLikeTapped,
-    this.onCommentTapped,
-    this.onShareTapped,
-    this.onFollowTapped,
-    this.onUserProfileTapped,
-    this.overlayBuilder,
-    this.errorBuilder,
-    this.loadingBuilder,
-  });
 
   @override
   State<SnapReels> createState() => _SnapReelsState();
@@ -126,15 +130,12 @@ class _SnapReelsState extends State<SnapReels>
     switch (state) {
       case AppLifecycleState.resumed:
         _controller.setAppVisibility(true);
-        break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         _controller.setAppVisibility(false);
-        break;
       case AppLifecycleState.hidden:
         _controller.setAppVisibility(false);
-        break;
     }
   }
 
@@ -179,7 +180,7 @@ class _SnapReelsState extends State<SnapReels>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return Container(
+    return ColoredBox(
       color: widget.config.backgroundColor,
       child: widget.config.enablePullToRefresh
           ? RefreshIndicator(
@@ -241,8 +242,10 @@ class _SnapReelsState extends State<SnapReels>
                 ? () => widget.onTap!(reel, _controller.currentPosition.value)
                 : null,
             onLongPress: widget.onLongPress != null
-                ? () =>
-                    widget.onLongPress!(reel, _controller.currentPosition.value)
+                ? () => widget.onLongPress!(
+                    reel,
+                    _controller.currentPosition.value,
+                  )
                 : null,
             onLike: () => widget.onReelLiked?.call(reel),
             onShare: () => widget.onReelShared?.call(reel),

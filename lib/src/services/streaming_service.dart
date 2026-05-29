@@ -2,20 +2,19 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-import '../models/reel_config.dart';
-import '../models/reel_model.dart';
-import '../services/cache_manager.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/services/cache_manager.dart';
 
 /// Service for handling advanced video streaming with HLS, DASH, and MP4 support.
 ///
 /// Resolves the optimal streaming URL based on platform, network conditions,
 /// and caching state. Players are managed by the ReelController pool.
 class StreamingService {
-  static final StreamingService _instance = StreamingService._internal();
-
   factory StreamingService() => _instance;
 
   StreamingService._internal();
+  static final StreamingService _instance = StreamingService._internal();
 
   static StreamingService get instance => _instance;
 
@@ -54,13 +53,10 @@ class StreamingService {
     switch (config.preferredFormat) {
       case PreferredStreamingFormat.hls:
         if (videoSource.hasFormat(VideoFormat.hls)) return VideoFormat.hls;
-        break;
       case PreferredStreamingFormat.dash:
         if (videoSource.hasFormat(VideoFormat.dash)) return VideoFormat.dash;
-        break;
       case PreferredStreamingFormat.mp4:
         if (videoSource.hasFormat(VideoFormat.mp4)) return VideoFormat.mp4;
-        break;
       case PreferredStreamingFormat.auto:
         final isLowBandwidth = await _isLowBandwidth();
         final isMobile = await _isMobileNetwork();
@@ -75,7 +71,6 @@ class StreamingService {
             return VideoFormat.dash;
           }
         }
-        break;
     }
 
     if (videoSource.hasFormat(VideoFormat.hls)) return VideoFormat.hls;

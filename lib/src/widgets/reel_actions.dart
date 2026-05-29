@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 import 'package:like_button/like_button.dart';
 
-import '../controllers/reel_controller.dart';
-import '../models/reel_config.dart';
-import '../models/reel_model.dart';
-import '../utils/reel_utils.dart';
+import 'package:snap_reels/src/controllers/reel_controller.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/utils/reel_utils.dart';
 
 /// Widget that displays action buttons (like, comment, share, etc.) on the right side
 class ReelActions extends StatefulWidget {
+  const ReelActions({
+    required this.reel,
+    required this.config,
+    super.key,
+    this.onLike,
+    this.onShare,
+    this.onComment,
+    this.onFollow,
+    this.onBlock,
+  });
   final ReelModel reel;
   final ReelConfig config;
   final VoidCallback? onLike;
@@ -17,17 +28,6 @@ class ReelActions extends StatefulWidget {
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
   final VoidCallback? onBlock;
-
-  const ReelActions({
-    super.key,
-    required this.reel,
-    required this.config,
-    this.onLike,
-    this.onShare,
-    this.onComment,
-    this.onFollow,
-    this.onBlock,
-  });
 
   @override
   State<ReelActions> createState() => _ReelActionsState();
@@ -51,13 +51,16 @@ class _ReelActionsState extends State<ReelActions>
       vsync: this,
     );
 
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _pulseAnimationController,
-      curve: Curves.easeInOut,
-    ));
+    _pulseAnimation =
+        Tween<double>(
+          begin: 1,
+          end: 1.1,
+        ).animate(
+          CurvedAnimation(
+            parent: _pulseAnimationController,
+            curve: Curves.easeInOut,
+          ),
+        );
   }
 
   @override
@@ -80,14 +83,14 @@ class _ReelActionsState extends State<ReelActions>
           size: widget.config.likeButtonSize,
           countPostion: CountPostion.bottom,
           likeCountAnimationType: LikeCountAnimationType.none,
-          likeBuilder: (bool isLiked) {
+          likeBuilder: (isLiked) {
             return Icon(
               IconlyLight.heart,
               color: isLiked ? Colors.red : widget.config.textColor,
               size: widget.config.likeButtonSize,
             );
           },
-          countBuilder: (int? count, bool isLiked, String text) {
+          countBuilder: (count, isLiked, text) {
             if (count == null || count == 0) return const SizedBox.shrink();
             return Text(
               ReelUtils.formatCount(count),
@@ -164,8 +167,8 @@ class _ReelActionsState extends State<ReelActions>
   Widget _buildActionButton({
     required IconData icon,
     required Color iconColor,
-    int? count,
     required VoidCallback onTap,
+    int? count,
     Animation<double>? animation,
   }) {
     Widget iconWidget = Icon(
@@ -300,7 +303,7 @@ class _ReelActionsState extends State<ReelActions>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Download started...'),
+          content: const Text('Download started...'),
           duration: const Duration(seconds: 2),
           backgroundColor: widget.config.accentColor,
         ),
@@ -311,7 +314,7 @@ class _ReelActionsState extends State<ReelActions>
   void _showFloatingHeart() {
     if (!mounted) return;
     final overlay = Overlay.of(context);
-    final renderBox = context.findRenderObject() as RenderBox;
+    final renderBox = context.findRenderObject()! as RenderBox;
     final position = renderBox.localToGlobal(Offset.zero);
 
     late OverlayEntry overlayEntry;
@@ -322,7 +325,7 @@ class _ReelActionsState extends State<ReelActions>
       vsync: this,
     );
 
-    final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    final animation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
 
@@ -337,7 +340,7 @@ class _ReelActionsState extends State<ReelActions>
               opacity: 1.0 - animation.value,
               child: Transform.scale(
                 scale: 0.5 + (0.5 * animation.value),
-                child: Icon(
+                child: const Icon(
                   IconlyLight.heart,
                   color: Colors.red,
                   size: 30,
@@ -358,9 +361,11 @@ class _ReelActionsState extends State<ReelActions>
   }
 
   void _showCommentsBottomSheet(
-      BuildContext context, ReelController controller) {
-    final TextEditingController commentController = TextEditingController();
-    final FocusNode commentFocusNode = FocusNode();
+    BuildContext context,
+    ReelController controller,
+  ) {
+    final commentController = TextEditingController();
+    final commentFocusNode = FocusNode();
 
     showModalBottomSheet(
       context: context,
@@ -396,8 +401,10 @@ class _ReelActionsState extends State<ReelActions>
                   ),
                   // Header
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Text(
@@ -407,10 +414,10 @@ class _ReelActionsState extends State<ReelActions>
                         const Spacer(),
                         Text(
                           ReelUtils.formatCount(widget.reel.commentsCount),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Colors.grey[600],
+                              ),
                         ),
                       ],
                     ),
@@ -557,7 +564,7 @@ class _ReelActionsState extends State<ReelActions>
                                 commentController.clear();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Comment posted!'),
+                                    content: const Text('Comment posted!'),
                                     backgroundColor: widget.config.accentColor,
                                   ),
                                 );
@@ -574,7 +581,7 @@ class _ReelActionsState extends State<ReelActions>
                               commentController.clear();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Comment posted!'),
+                                  content: const Text('Comment posted!'),
                                   backgroundColor: widget.config.accentColor,
                                 ),
                               );
@@ -610,69 +617,75 @@ class _ReelActionsState extends State<ReelActions>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Bookmark in more menu
-            if (widget.config.showBookmarkButton &&
-                widget.config.bookmarkInMoreMenu)
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Bookmark in more menu
+              if (widget.config.showBookmarkButton &&
+                  widget.config.bookmarkInMoreMenu)
+                ListTile(
+                  leading: Icon(
+                    widget.reel.isBookmarked
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                  ),
+                  title: Text(
+                    widget.reel.isBookmarked
+                        ? 'Remove bookmark'
+                        : 'Add bookmark',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleBookmark(controller);
+                  },
+                ),
+              // Download in more menu
+              if (widget.config.showDownloadButton &&
+                  widget.config.downloadInMoreMenu)
+                ListTile(
+                  leading: const Icon(Icons.download),
+                  title: const Text('Download'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleDownload(controller);
+                  },
+                ),
               ListTile(
-                leading: Icon(widget.reel.isBookmarked
-                    ? Icons.bookmark
-                    : Icons.bookmark_border),
-                title: Text(widget.reel.isBookmarked
-                    ? 'Remove bookmark'
-                    : 'Add bookmark'),
+                leading: const Icon(Icons.report),
+                title: Text(widget.config.reportLabel),
                 onTap: () {
                   Navigator.pop(context);
-                  _handleBookmark(controller);
+                  _handleReport(controller);
                 },
               ),
-            // Download in more menu
-            if (widget.config.showDownloadButton &&
-                widget.config.downloadInMoreMenu)
               ListTile(
-                leading: Icon(Icons.download),
-                title: Text('Download'),
+                leading: const Icon(Icons.block),
+                title: Text(widget.config.blockLabel),
                 onTap: () {
                   Navigator.pop(context);
-                  _handleDownload(controller);
+                  _handleBlock(controller);
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.report),
-              title: Text(widget.config.reportLabel),
-              onTap: () {
-                Navigator.pop(context);
-                _handleReport(controller);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.block),
-              title: Text(widget.config.blockLabel),
-              onTap: () {
-                Navigator.pop(context);
-                _handleBlock(controller);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.link),
-              title: Text(widget.config.copyLinkLabel),
-              onTap: () {
-                Navigator.pop(context);
-                _handleCopyLink(controller);
-              },
-            ),
-            if (widget.config.customActions.isNotEmpty)
-              ...widget.config.customActions.map((action) => ListTile(
+              ListTile(
+                leading: const Icon(Icons.link),
+                title: Text(widget.config.copyLinkLabel),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleCopyLink(controller);
+                },
+              ),
+              if (widget.config.customActions.isNotEmpty)
+                ...widget.config.customActions.map(
+                  (action) => ListTile(
                     leading: Icon(action.icon),
                     title: Text(action.title),
                     onTap: () {
                       Navigator.pop(context);
                       action.onTap(widget.reel);
                     },
-                  )),
-          ],
-        ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -684,7 +697,7 @@ class _ReelActionsState extends State<ReelActions>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Content reported'),
+          content: const Text('Content reported'),
           backgroundColor: widget.config.accentColor,
         ),
       );
@@ -697,7 +710,7 @@ class _ReelActionsState extends State<ReelActions>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('User blocked'),
+          content: const Text('User blocked'),
           backgroundColor: widget.config.accentColor,
         ),
       );
@@ -711,7 +724,7 @@ class _ReelActionsState extends State<ReelActions>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Link copied to clipboard'),
+          content: const Text('Link copied to clipboard'),
           backgroundColor: widget.config.accentColor,
         ),
       );

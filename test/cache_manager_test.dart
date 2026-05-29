@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
 import 'package:snap_reels/src/services/cache_manager.dart';
 
 class _FakePathProvider extends PathProviderPlatform
@@ -20,8 +21,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
-    final tempDir =
-        Directory.systemTemp.createTempSync('snap_reels_cache_mgr_test_');
+    final tempDir = Directory.systemTemp.createTempSync(
+      'snap_reels_cache_mgr_test_',
+    );
     PathProviderPlatform.instance = _FakePathProvider(tempDir.path);
   });
 

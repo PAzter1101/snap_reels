@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../controllers/reel_controller.dart';
-import '../models/reel_config.dart';
-import '../models/reel_model.dart';
-import '../utils/reel_utils.dart';
-import 'reel_actions.dart';
-import 'reel_buffering_indicator.dart';
-import 'reel_error_overlay.dart';
-import 'reel_progress_indicator.dart';
+import 'package:snap_reels/src/controllers/reel_controller.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/utils/reel_utils.dart';
+import 'package:snap_reels/src/widgets/reel_actions.dart';
+import 'package:snap_reels/src/widgets/reel_buffering_indicator.dart';
+import 'package:snap_reels/src/widgets/reel_error_overlay.dart';
+import 'package:snap_reels/src/widgets/reel_progress_indicator.dart';
 
 /// Overlay widget that displays over the video with user info, actions, and controls
 class ReelOverlay extends StatefulWidget {
+  const ReelOverlay({
+    required this.reel,
+    required this.config,
+    required this.controller,
+    super.key,
+    this.onTap,
+    this.onLongPress,
+    this.onLike,
+    this.onShare,
+    this.onComment,
+    this.onFollow,
+    this.onBlock,
+    this.onCompleted,
+  });
   final ReelModel reel;
   final ReelConfig config;
   final VoidCallback? onTap;
@@ -24,21 +39,6 @@ class ReelOverlay extends StatefulWidget {
   final VoidCallback? onBlock;
   final VoidCallback? onCompleted;
   final ReelController controller;
-
-  const ReelOverlay({
-    super.key,
-    required this.reel,
-    required this.config,
-    this.onTap,
-    this.onLongPress,
-    this.onLike,
-    this.onShare,
-    this.onComment,
-    this.onFollow,
-    this.onBlock,
-    this.onCompleted,
-    required this.controller,
-  });
 
   @override
   State<ReelOverlay> createState() => _ReelOverlayState();
@@ -106,41 +106,44 @@ class _ReelOverlayState extends State<ReelOverlay>
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => GestureDetector(
-          onTap: _handleTap,
-          onLongPress: widget.onLongPress,
-          onLongPressStart: (details) {
-            if (widget.onLongPress != null) {
-              widget.onLongPress!();
-            } else {
-              _handleLongPressStart();
-            }
-          },
-          onLongPressEnd: (details) {
-            if (widget.onLongPress != null) {
-              widget.onLongPress!();
-            } else {
-              _handleLongPressEnd();
-            }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.transparent,
-                  Colors.black.withAlpha(100),
-                  Colors.black.withAlpha(150),
-                ],
-                stops: const [0.0, 0.4, 0.7, 1.0],
-              ),
+    return Obx(
+      () => GestureDetector(
+        onTap: _handleTap,
+        onLongPress: widget.onLongPress,
+        onLongPressStart: (details) {
+          if (widget.onLongPress != null) {
+            widget.onLongPress!();
+          } else {
+            _handleLongPressStart();
+          }
+        },
+        onLongPressEnd: (details) {
+          if (widget.onLongPress != null) {
+            widget.onLongPress!();
+          } else {
+            _handleLongPressEnd();
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.transparent,
+                Colors.black.withAlpha(100),
+                Colors.black.withAlpha(150),
+              ],
+              stops: const [0.0, 0.4, 0.7, 1.0],
             ),
-            child: Stack(children: [
+          ),
+          child: Stack(
+            children: [
               // Main content area
               Positioned(
-                bottom: (widget.config.showProgressIndicator ? 80 : 16) +
+                bottom:
+                    (widget.config.showProgressIndicator ? 80 : 16) +
                     widget.config.contentBottomPadding,
                 left: 16,
                 right: 80,
@@ -149,7 +152,8 @@ class _ReelOverlayState extends State<ReelOverlay>
 
               // Actions on the right
               Positioned(
-                bottom: (widget.config.showProgressIndicator ? 80 : 16) +
+                bottom:
+                    (widget.config.showProgressIndicator ? 80 : 16) +
                     widget.config.contentBottomPadding,
                 right: 12,
                 child: ReelActions(
@@ -192,7 +196,8 @@ class _ReelOverlayState extends State<ReelOverlay>
                   reel: widget.reel,
                   config: widget.config,
                   errorMessage:
-                      widget.controller.errorMessage ?? 'Unknown error occurred',
+                      widget.controller.errorMessage ??
+                      'Unknown error occurred',
                   onRetry: widget.controller.retry,
                   onCancel: widget.controller.clearError,
                 )
@@ -200,27 +205,29 @@ class _ReelOverlayState extends State<ReelOverlay>
                 ReelBufferingIndicator(config: widget.config),
 
               // Play/Pause icon animation
-              Obx(() => _showPlayPauseIcon.value
-                  ? Center(
-                      child: ScaleTransition(
-                        scale: _playPauseAnimation,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            widget.controller.isPlaying.value
-                                ? Icons.pause
-                                : Icons.play_arrow,
-                            color: widget.config.textColor,
-                            size: 48,
+              Obx(
+                () => _showPlayPauseIcon.value
+                    ? Center(
+                        child: ScaleTransition(
+                          scale: _playPauseAnimation,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              widget.controller.isPlaying.value
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: widget.config.textColor,
+                              size: 48,
+                            ),
                           ),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink()),
+                      )
+                    : const SizedBox.shrink(),
+              ),
 
               // Progress indicator at bottom
               if (widget.config.showProgressIndicator)
@@ -231,8 +238,6 @@ class _ReelOverlayState extends State<ReelOverlay>
                   child: ReelProgressIndicator(
                     reel: widget.reel,
                     config: widget.config,
-                    showThumb: true,
-                    showThumbnail: true,
                     onSeek: (position) {
                       if (widget.config.onSeek != null) {
                         widget.config.onSeek!(position);
@@ -240,9 +245,11 @@ class _ReelOverlayState extends State<ReelOverlay>
                     },
                   ),
                 ),
-            ]),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   Widget _buildUserInfo(BuildContext context) {
@@ -416,7 +423,8 @@ class _ReelOverlayState extends State<ReelOverlay>
           const SizedBox(width: 8), // Duration
           Text(
             ReelUtils.formatDurationFromMilliseconds(
-                widget.reel.duration?.inMilliseconds),
+              widget.reel.duration?.inMilliseconds,
+            ),
             style: TextStyle(
               color: widget.config.textColor.withAlpha(192),
               fontSize: 12,

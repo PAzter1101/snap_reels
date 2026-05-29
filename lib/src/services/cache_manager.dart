@@ -1,20 +1,22 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/cache_item.dart';
-import '../models/reel_config.dart';
-import '../utils/url_utils.dart' as url_utils;
+
+import 'package:snap_reels/src/models/cache_item.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/utils/url_utils.dart' as url_utils;
 
 export '../models/cache_item.dart';
 
 /// Advanced cache manager for video files and thumbnails
 class CacheManager {
+  CacheManager._internal();
   static CacheManager? _instance;
   static CacheManager get instance => _instance ??= CacheManager._internal();
-
-  CacheManager._internal();
 
   late Dio _dio;
   late Directory _cacheDirectory;
@@ -61,7 +63,7 @@ class CacheManager {
     final cacheKey = _generateCacheKey(url);
     final item = _cacheIndex[cacheKey];
     if (item != null && !item.isExpired) {
-      item.lastAccessTime = DateTime.now();
+      _cacheIndex[cacheKey] = item.copyWith(lastAccessTime: DateTime.now());
       return item.filePath;
     }
     return null;
@@ -82,8 +84,11 @@ class CacheManager {
       return await _downloadFutures[url];
     }
 
-    final downloadFuture =
-        _performDownload(url, onProgress: onProgress, cancelToken: cancelToken);
+    final downloadFuture = _performDownload(
+      url,
+      onProgress: onProgress,
+      cancelToken: cancelToken,
+    );
     _downloadFutures[url] = downloadFuture;
 
     try {
@@ -144,8 +149,8 @@ class CacheManager {
 
   /// Preload multiple URLs
   Future<void> preloadUrls(List<String> urls) async {
-    final futures = urls.map((url) => downloadAndCache(url)).toList();
-    await Future.wait(futures, eagerError: false);
+    final futures = urls.map(downloadAndCache).toList();
+    await Future.wait(futures);
   }
 
   /// Check if a URL is cached
@@ -158,9 +163,9 @@ class CacheManager {
   Future<CacheStats> getCacheStats() async {
     if (!_isInitialized) return CacheStats.empty();
 
-    int totalFiles = _cacheIndex.length;
-    int totalSize = 0;
-    int expiredFiles = 0;
+    final totalFiles = _cacheIndex.length;
+    var totalSize = 0;
+    var expiredFiles = 0;
 
     for (final item in _cacheIndex.values) {
       totalSize += item.fileSize;
@@ -256,8 +261,14 @@ class CacheManager {
         final json =
             jsonDecode(await file.readAsString()) as Map<String, dynamic>;
         _cacheIndex.clear();
-        _cacheIndex.addAll(json.map((key, value) =>
-            MapEntry(key, CacheItem.fromJson(value as Map<String, dynamic>))));
+        _cacheIndex.addAll(
+          json.map(
+            (key, value) => MapEntry(
+              key,
+              CacheItem.fromJson(value as Map<String, dynamic>),
+            ),
+          ),
+        );
       }
     } catch (e) {
       debugPrint('Error loading cache index: $e');
@@ -268,8 +279,9 @@ class CacheManager {
   Future<void> _saveCacheIndex() async {
     try {
       final file = File('${_cacheDirectory.path}/cache_index.json');
-      final json =
-          _cacheIndex.map((key, value) => MapEntry(key, value.toJson()));
+      final json = _cacheIndex.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      );
       await file.writeAsString(jsonEncode(json));
     } catch (e) {
       debugPrint('Error saving cache index: $e');
@@ -311,7 +323,7 @@ class CacheManager {
     final sortedItems = _cacheIndex.values.toList()
       ..sort((a, b) => a.lastAccessTime.compareTo(b.lastAccessTime));
 
-    int currentSize = stats.totalSize;
+    var currentSize = stats.totalSize;
     final itemsToRemove = <CacheItem>[];
 
     for (final item in sortedItems) {
@@ -335,7 +347,8 @@ class CacheManager {
     if (itemsToRemove.isNotEmpty) {
       await _saveCacheIndex();
       debugPrint(
-          'Removed ${itemsToRemove.length} cache items to enforce size limit');
+        'Removed ${itemsToRemove.length} cache items to enforce size limit',
+      );
     }
   }
 
@@ -356,8 +369,10 @@ class CacheManager {
   }
 
   Future<void> _evictIfOverCacheSize() async {
-    int totalSize =
-        _cacheIndex.values.fold(0, (sum, item) => sum + item.fileSize);
+    var totalSize = _cacheIndex.values.fold(
+      0,
+      (sum, item) => sum + item.fileSize,
+    );
     if (totalSize <= _maxCacheFileSize) return;
 
     final sorted = _cacheIndex.values.toList()

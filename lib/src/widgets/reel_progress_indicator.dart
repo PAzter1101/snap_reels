@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../controllers/reel_controller.dart';
-import '../models/reel_config.dart';
-import '../models/reel_model.dart';
-import '../utils/reel_utils.dart';
+import 'package:snap_reels/src/controllers/reel_controller.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/utils/reel_utils.dart';
 
 /// Perfect video progress indicator with seeking, thumbnails, and smooth animations
 class ReelProgressIndicator extends StatefulWidget {
+  const ReelProgressIndicator({
+    required this.reel,
+    required this.config,
+    super.key,
+    this.showThumb = true,
+    this.showTime = false,
+    this.height = 4.0,
+    this.onSeek,
+    this.showThumbnail = true,
+  });
   final ReelModel reel;
   final ReelConfig config;
   final bool showThumb;
@@ -15,17 +26,6 @@ class ReelProgressIndicator extends StatefulWidget {
   final double height;
   final Function(Duration)? onSeek;
   final bool showThumbnail;
-
-  const ReelProgressIndicator({
-    super.key,
-    required this.reel,
-    required this.config,
-    this.showThumb = true,
-    this.showTime = false,
-    this.height = 4.0,
-    this.onSeek,
-    this.showThumbnail = true,
-  });
 
   @override
   State<ReelProgressIndicator> createState() => _ReelProgressIndicatorState();
@@ -54,7 +54,7 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 1.1).animate(
       CurvedAnimation(parent: _scaleAnimationController, curve: Curves.easeOut),
     );
 
@@ -62,15 +62,19 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _thumbSizeAnimation = Tween<double>(begin: 12.0, end: 20.0).animate(
+    _thumbSizeAnimation = Tween<double>(begin: 12, end: 20).animate(
       CurvedAnimation(
-          parent: _thumbAnimationController, curve: Curves.elasticOut),
+        parent: _thumbAnimationController,
+        curve: Curves.elasticOut,
+      ),
     );
     _trackHeightAnimation =
         Tween<double>(begin: widget.height, end: widget.height * 1.5).animate(
-      CurvedAnimation(
-          parent: _thumbAnimationController, curve: Curves.easeOut),
-    );
+          CurvedAnimation(
+            parent: _thumbAnimationController,
+            curve: Curves.easeOut,
+          ),
+        );
   }
 
   @override
@@ -89,8 +93,7 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
 
       if (duration.inMilliseconds <= 0) return const SizedBox.shrink();
 
-      final actualProgress =
-          position.inMilliseconds / duration.inMilliseconds;
+      final actualProgress = position.inMilliseconds / duration.inMilliseconds;
       final displayProgress = _isDragging.value
           ? (_dragValue.value ?? actualProgress)
           : actualProgress;
@@ -121,15 +124,17 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
       final screenWidth = MediaQuery.of(context).size.width;
 
       const thumbnailWidth = 150.0;
-      final safeLeft = (position - thumbnailWidth / 2)
-          .clamp(16.0, screenWidth - thumbnailWidth - 16.0);
+      final safeLeft = (position - thumbnailWidth / 2).clamp(
+        16.0,
+        screenWidth - thumbnailWidth - 16.0,
+      );
 
       return Positioned(
         bottom: 40,
         left: safeLeft,
         child: TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 150),
-          tween: Tween(begin: 0.0, end: 1.0),
+          tween: Tween(begin: 0, end: 1),
           builder: (context, value, child) {
             return Transform.scale(
               scale: 0.8 + (0.2 * value),
@@ -167,17 +172,24 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
                               ],
                             ),
                           ),
-                          child: Center(
+                          child: const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.play_circle_outline,
-                                    color: Colors.white70, size: 28),
-                                const SizedBox(height: 4),
-                                Text('Preview',
-                                    style: TextStyle(
-                                        color: Colors.white60, fontSize: 10,
-                                        fontWeight: FontWeight.w500)),
+                                Icon(
+                                  Icons.play_circle_outline,
+                                  color: Colors.white70,
+                                  size: 28,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Preview',
+                                  style: TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -185,18 +197,20 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.black,
-                            borderRadius: const BorderRadius.only(
+                            borderRadius: BorderRadius.only(
                               bottomLeft: Radius.circular(10),
                               bottomRight: Radius.circular(10),
                             ),
                           ),
                           child: Text(
                             ReelUtils.formatDuration(time),
-                            style: TextStyle(
-                                color: Colors.white, fontSize: 13,
-                                fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -219,8 +233,11 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     Duration position,
   ) {
     return AnimatedBuilder(
-      animation: Listenable.merge(
-          [_scaleAnimation, _trackHeightAnimation, _thumbSizeAnimation]),
+      animation: Listenable.merge([
+        _scaleAnimation,
+        _trackHeightAnimation,
+        _thumbSizeAnimation,
+      ]),
       builder: (context, child) {
         return Transform.scale(
           scale: _scaleAnimation.value,
@@ -244,7 +261,8 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
                       decoration: BoxDecoration(
                         color: Colors.grey.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(
-                            _trackHeightAnimation.value / 2),
+                          _trackHeightAnimation.value / 2,
+                        ),
                       ),
                     ),
                     Align(
@@ -256,7 +274,8 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
                           decoration: BoxDecoration(
                             color: widget.config.progressColor,
                             borderRadius: BorderRadius.circular(
-                                _trackHeightAnimation.value / 2),
+                              _trackHeightAnimation.value / 2,
+                            ),
                           ),
                         ),
                       ),
@@ -276,7 +295,7 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     final duration = controller.totalDuration.value;
     if (duration.inMilliseconds <= 0) return;
 
-    final RenderBox box = context.findRenderObject() as RenderBox;
+    final box = context.findRenderObject()! as RenderBox;
     final width = box.size.width;
     final tapPosition = (details.localPosition.dx / width).clamp(0.0, 1.0);
 
@@ -303,10 +322,9 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     _thumbAnimationController.forward();
     _scaleAnimationController.forward();
 
-    final RenderBox box = context.findRenderObject() as RenderBox;
+    final box = context.findRenderObject()! as RenderBox;
     final width = box.size.width;
-    final dragPosition =
-        (details.localPosition.dx / width).clamp(0.0, 1.0);
+    final dragPosition = (details.localPosition.dx / width).clamp(0.0, 1.0);
     _dragValue.value = dragPosition;
 
     if (widget.showThumbnail) {
@@ -323,10 +341,9 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
     final duration = controller.totalDuration.value;
     if (duration.inMilliseconds <= 0) return;
 
-    final RenderBox box = context.findRenderObject() as RenderBox;
+    final box = context.findRenderObject()! as RenderBox;
     final width = box.size.width;
-    final dragPosition =
-        (details.localPosition.dx / width).clamp(0.0, 1.0);
+    final dragPosition = (details.localPosition.dx / width).clamp(0.0, 1.0);
     _dragValue.value = dragPosition;
 
     if (widget.showThumbnail && _showThumbnail.value) {
@@ -349,9 +366,7 @@ class _ReelProgressIndicatorState extends State<ReelProgressIndicator>
       widget.onSeek?.call(newPosition);
 
       if (_wasPlayingBeforeDrag) {
-        Future.delayed(const Duration(milliseconds: 150), () {
-          controller.play();
-        });
+        Future.delayed(const Duration(milliseconds: 150), controller.play);
       }
     }
 

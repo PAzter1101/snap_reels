@@ -8,7 +8,7 @@ part of 'reel_controller.dart';
 mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
   /// Create the fixed pool of [_poolSize] Player+VideoController pairs.
   void _initializePool() {
-    for (int i = 0; i < _poolSize; i++) {
+    for (var i = 0; i < _poolSize; i++) {
       final player = Player();
       _players.add(player);
       _videoControllers.add(VideoController(player));
@@ -78,7 +78,7 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
       }
       if (_initSerial != expectedSerial) return;
 
-      await _openSlot(slot, currentReel, play: false);
+      await _openSlot(slot, currentReel);
       if (_initSerial != expectedSerial) return;
 
       _switchToSlot(slot);
@@ -101,13 +101,12 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
     final url = _resolveVideoUrl(reel);
     final player = _players[slot];
 
-    // Streaming tunables (см. media-kit/media-kit#959).
-    // setProperty доступен только на native backend (mpv); на web — no-op.
+    // Streaming tunables (see media-kit/media-kit#959). setProperty is
+    // native-only (mpv backend); a no-op on web.
     final platform = player.platform;
     if (platform is NativePlayer) {
-      // FFmpeg auto-reconnect: при transient HTTP error / keep-alive close
-      // libavformat выходит в EOF и playback стопорится. Включаем повторное
-      // подключение с экспоненциальным backoff на уровне libavformat.
+      // libavformat auto-reconnect: on transient HTTP error or keep-alive
+      // close libavformat hits EOF and playback stalls.
       await platform.setProperty(
         'demuxer-lavf-o',
         'reconnect=1,'
@@ -116,16 +115,14 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
             'reconnect_delay_max=2',
       );
       await platform.setProperty('network-timeout', '30');
-      // HW decoding если поддерживается, иначе SW — рекомендованный preset
-      // media_kit для mobile. Снимает зависания на specific форматах,
-      // которые ловит фиксированный hwdec=mediacodec.
+      // Auto-safe HW decoding falls back to SW where unsupported — fixes
+      // stalls on formats that a hard hwdec=mediacodec mis-handles.
       await platform.setProperty('hwdec', 'auto-safe');
-      // Прогрессивный MP4 без явного `Accept-Ranges` иногда трактуется как
-      // unseekable — ставим явно, чтобы libmpv мог делать range-requests
-      // на восстановлении после reconnect.
+      // Some progressive MP4s ship without Accept-Ranges; mark them
+      // seekable so libmpv can range-request after a reconnect.
       await platform.setProperty('force-seekable', 'yes');
-      // Readahead-буфер демуксера: 20 сек вперёд снижает шанс попасть
-      // в underrun на первых секундах playback.
+      // Read-ahead 20s of demuxed packets to avoid underrun in the
+      // first seconds of playback.
       await platform.setProperty('cache', 'yes');
       await platform.setProperty('cache-secs', '10');
       await platform.setProperty('demuxer-readahead-secs', '20');
@@ -172,14 +169,14 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
   /// Find the pool slot farthest from [targetIndex], or an empty one.
   int _getRecyclableSlot(int targetIndex) {
     // Prefer an unassigned slot.
-    for (int i = 0; i < _poolSize; i++) {
+    for (var i = 0; i < _poolSize; i++) {
       if (!_slotToReel.containsKey(i)) return i;
     }
 
     // All slots assigned — recycle the farthest from target.
-    int farthestSlot = 0;
-    int maxDistance = -1;
-    for (int i = 0; i < _poolSize; i++) {
+    var farthestSlot = 0;
+    var maxDistance = -1;
+    for (var i = 0; i < _poolSize; i++) {
       final dist = (_slotToReel[i]! - targetIndex).abs();
       if (dist > maxDistance) {
         maxDistance = dist;
@@ -191,8 +188,9 @@ mixin _VideoLifecycleMixin on GetxController, _ReelStateMixin {
 
   String _resolveVideoUrl(ReelModel reel) {
     final videoSource = reel.videoSource;
-    if (videoSource != null)
+    if (videoSource != null) {
       return videoSource.getUrlForFormat(VideoFormat.mp4);
+    }
     final videoUrl = reel.videoUrl;
     if (videoUrl != null) return videoUrl;
     throw Exception('No video source available');

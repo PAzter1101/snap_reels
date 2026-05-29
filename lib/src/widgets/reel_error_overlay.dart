@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import '../models/reel_config.dart';
-import '../models/reel_model.dart';
+
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
 
 /// Full-screen error overlay shown when video playback fails. The default UI
 /// is a Material-style centered dialog with Cancel and Retry buttons. Host
 /// apps can replace the UI via [ReelConfig.errorDialogBuilder].
 class ReelErrorOverlay extends StatelessWidget {
   const ReelErrorOverlay({
-    super.key,
     required this.reel,
     required this.config,
     required this.errorMessage,
     required this.onRetry,
     required this.onCancel,
+    super.key,
   });
 
   final ReelModel reel;
@@ -27,7 +28,7 @@ class ReelErrorOverlay extends StatelessWidget {
     if (customBuilder != null) {
       return customBuilder(context, reel, errorMessage, onRetry, onCancel);
     }
-    return Container(
+    return ColoredBox(
       color: Colors.black54,
       child: Center(
         child: Container(

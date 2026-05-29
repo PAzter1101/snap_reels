@@ -1,0 +1,11 @@
+global_options:
+  freezed:
+    runs_before:
+      - json_serializable
+
+targets:
+  $default:
+    sources:
+      - lib/**
+      - test/**
+      - $package$

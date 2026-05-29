@@ -24,6 +24,24 @@ extension PreferredStreamingFormatExtension on PreferredStreamingFormat {
 
 /// Configuration for streaming
 class StreamingConfig {
+  const StreamingConfig({
+    this.preferredFormat = PreferredStreamingFormat.auto,
+    this.enableAdaptiveBitrate = true,
+    this.enableLowLatency = false,
+    this.maxBitrate,
+    this.minBitrate,
+    this.enableSubtitles = true,
+    this.enableAudioTrackSelection = true,
+    this.enableQualitySelection = true,
+    this.fallbackToMp4 = true,
+    this.networkTimeout = 30,
+    this.retryAttempts = 3,
+    this.enableDrm = false,
+    this.drmHeaders,
+    this.enableCaching = true,
+    this.initialVolume = 1.0,
+  });
+
   /// Preferred streaming format (default: HLS)
   final PreferredStreamingFormat preferredFormat;
 
@@ -71,24 +89,6 @@ class StreamingConfig {
 
   /// Initial volume
   final double initialVolume;
-
-  const StreamingConfig({
-    this.preferredFormat = PreferredStreamingFormat.auto,
-    this.enableAdaptiveBitrate = true,
-    this.enableLowLatency = false,
-    this.maxBitrate,
-    this.minBitrate,
-    this.enableSubtitles = true,
-    this.enableAudioTrackSelection = true,
-    this.enableQualitySelection = true,
-    this.fallbackToMp4 = true,
-    this.networkTimeout = 30,
-    this.retryAttempts = 3,
-    this.enableDrm = false,
-    this.drmHeaders,
-    this.enableCaching = true,
-    this.initialVolume = 1.0,
-  });
 
   StreamingConfig copyWith({
     PreferredStreamingFormat? preferredFormat,

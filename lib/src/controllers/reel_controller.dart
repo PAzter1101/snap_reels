@@ -1,19 +1,25 @@
 import 'dart:async';
 
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+
+import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../models/reel_model.dart';
-import '../models/reel_config.dart';
-import '../services/cache_manager.dart';
-import '../utils/device_classifier.dart';
 
+import 'package:snap_reels/snap_reels.dart' show CachedThumbnail;
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/services/cache_manager.dart';
+import 'package:snap_reels/src/utils/device_classifier.dart';
+
+import 'package:snap_reels/src/widgets/cached_thumbnail.dart'
+    show CachedThumbnail;
+
+part '_playback_mixin.dart';
+part '_preload_manager_mixin.dart';
 part '_reel_state_mixin.dart';
 part '_video_lifecycle_mixin.dart';
-part '_preload_manager_mixin.dart';
-part '_playback_mixin.dart';
 
 /// Main orchestrator: wires together state, video lifecycle, preloading
 /// and playback. Handles initialization, page changes and navigation.
@@ -28,7 +34,7 @@ class ReelController extends GetxController
     ReelConfig? config,
   }) {
     _reels = reels ?? [];
-    _config = config ?? ReelConfig();
+    _config = config ?? const ReelConfig();
   }
 
   @override
@@ -49,7 +55,7 @@ class ReelController extends GetxController
       _isInitialized.value = false;
 
       _reels = reels ?? [];
-      _config = config ?? ReelConfig();
+      _config = config ?? const ReelConfig();
 
       if (_reels.isEmpty) {
         throw Exception('No reels provided');
@@ -187,7 +193,7 @@ class ReelController extends GetxController
     if (pc == null || !pc.hasClients) return;
     if (_currentIndex.value >= _reels.length - 1) return;
 
-    for (int i = 0; i < repeats; i++) {
+    for (var i = 0; i < repeats; i++) {
       final baseOffset = pc.offset;
       await pc.animateTo(
         baseOffset + peekOffset,

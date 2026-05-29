@@ -1,15 +1,17 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+
 import 'package:device_info_plus/device_info_plus.dart';
-import '../models/reel_analytics.dart';
+
+import 'package:snap_reels/src/models/reel_analytics.dart';
 
 /// Service for collecting and reporting analytics data
 class AnalyticsService {
+  AnalyticsService._internal();
   static AnalyticsService? _instance;
   static AnalyticsService get instance =>
       _instance ??= AnalyticsService._internal();
-
-  AnalyticsService._internal();
 
   bool _isEnabled = false;
   DeviceInfo? _deviceInfo;
@@ -21,14 +23,14 @@ class AnalyticsService {
 
   /// Callback for batch sending analytics data
   Future<void> Function(List<ReelAnalytics> analytics)?
-      onBatchAnalyticsReported;
+  onBatchAnalyticsReported;
 
   /// Initialize the analytics service
   Future<void> initialize({
     bool enabled = true,
     Future<void> Function(ReelAnalytics analytics)? onAnalyticsReported,
     Future<void> Function(List<ReelAnalytics> analytics)?
-        onBatchAnalyticsReported,
+    onBatchAnalyticsReported,
   }) async {
     _isEnabled = enabled;
     if (!_isEnabled) return;
@@ -50,7 +52,7 @@ class AnalyticsService {
       reelId: reelId,
       userId: userId,
       deviceInfo: _deviceInfo!,
-      performanceMetrics: PerformanceMetrics(),
+      performanceMetrics: const PerformanceMetrics(),
       sessionStartTime: DateTime.now(),
     );
 
@@ -127,8 +129,9 @@ class AnalyticsService {
         metadata: metadata,
       );
 
-      final updatedEvents =
-          List<InteractionEvent>.from(analytics.interactionEvents)..add(event);
+      final updatedEvents = List<InteractionEvent>.from(
+        analytics.interactionEvents,
+      )..add(event);
 
       _activeAnalytics[reelId] = analytics.copyWith(
         interactionEvents: updatedEvents,
@@ -173,8 +176,12 @@ class AnalyticsService {
 
   /// Track video seeked
   void trackVideoSeeked(String reelId, Duration position, Duration? duration) {
-    trackPlaybackEvent(reelId, PlaybackEventType.seeked, position,
-        duration: duration);
+    trackPlaybackEvent(
+      reelId,
+      PlaybackEventType.seeked,
+      position,
+      duration: duration,
+    );
   }
 
   /// Track buffering started
@@ -234,21 +241,34 @@ class AnalyticsService {
 
   /// Track tap gesture
   void trackTap(
-      String reelId, Duration videoPosition, Map<String, dynamic>? metadata) {
-    trackInteractionEvent(reelId, InteractionEventType.tap, videoPosition,
-        metadata: metadata);
+    String reelId,
+    Duration videoPosition,
+    Map<String, dynamic>? metadata,
+  ) {
+    trackInteractionEvent(
+      reelId,
+      InteractionEventType.tap,
+      videoPosition,
+      metadata: metadata,
+    );
   }
 
   /// Track double tap gesture
   void trackDoubleTap(String reelId, Duration videoPosition) {
     trackInteractionEvent(
-        reelId, InteractionEventType.doubleTap, videoPosition);
+      reelId,
+      InteractionEventType.doubleTap,
+      videoPosition,
+    );
   }
 
   /// Track long press gesture
   void trackLongPress(String reelId, Duration videoPosition) {
     trackInteractionEvent(
-        reelId, InteractionEventType.longPress, videoPosition);
+      reelId,
+      InteractionEventType.longPress,
+      videoPosition,
+    );
   }
 
   /// Track swipe gestures
@@ -257,22 +277,22 @@ class AnalyticsService {
     switch (direction.toLowerCase()) {
       case 'up':
         eventType = InteractionEventType.swipeUp;
-        break;
       case 'down':
         eventType = InteractionEventType.swipeDown;
-        break;
       case 'left':
         eventType = InteractionEventType.swipeLeft;
-        break;
       case 'right':
         eventType = InteractionEventType.swipeRight;
-        break;
       default:
         return;
     }
 
-    trackInteractionEvent(reelId, eventType, videoPosition,
-        metadata: {'direction': direction});
+    trackInteractionEvent(
+      reelId,
+      eventType,
+      videoPosition,
+      metadata: {'direction': direction},
+    );
   }
 
   /// Get current analytics for a reel
@@ -318,8 +338,10 @@ class AnalyticsService {
     // Calculate metrics
     final totalPlayTime = _calculateTotalPlayTime(playbackEvents);
     final watchPercentage = _calculateWatchPercentage(playbackEvents);
-    final interactionRate =
-        _calculateInteractionRate(interactionEvents, totalPlayTime);
+    final interactionRate = _calculateInteractionRate(
+      interactionEvents,
+      totalPlayTime,
+    );
     final bufferingEvents = playbackEvents
         .where((e) => e.type == PlaybackEventType.buffering)
         .length;
@@ -371,9 +393,6 @@ class AnalyticsService {
         platform: platform,
         deviceModel: deviceModel,
         osVersion: osVersion,
-        screenResolution: null, // Can be set from MediaQuery if needed
-        networkType: null, // Can be detected using connectivity_plus
-        batteryLevel: null, // Can be detected using battery_plus
       );
     } catch (e) {
       debugPrint('Error collecting device info: $e');
@@ -390,7 +409,7 @@ class AnalyticsService {
 
   /// Calculate total play time from events
   Duration _calculateTotalPlayTime(List<PlaybackEvent> events) {
-    Duration totalTime = Duration.zero;
+    var totalTime = Duration.zero;
     DateTime? playStartTime;
 
     for (final event in events) {
@@ -398,14 +417,12 @@ class AnalyticsService {
         case PlaybackEventType.started:
         case PlaybackEventType.resumed:
           playStartTime = event.timestamp;
-          break;
         case PlaybackEventType.paused:
         case PlaybackEventType.completed:
           if (playStartTime != null) {
             totalTime += event.timestamp.difference(playStartTime);
             playStartTime = null;
           }
-          break;
         default:
           break;
       }
@@ -421,12 +438,13 @@ class AnalyticsService {
 
   /// Calculate watch percentage
   double _calculateWatchPercentage(List<PlaybackEvent> events) {
-    final completedEvents =
-        events.where((e) => e.type == PlaybackEventType.completed);
-    if (completedEvents.isNotEmpty) return 100.0;
+    final completedEvents = events.where(
+      (e) => e.type == PlaybackEventType.completed,
+    );
+    if (completedEvents.isNotEmpty) return 100;
 
     // Find the furthest position reached
-    Duration maxPosition = Duration.zero;
+    var maxPosition = Duration.zero;
     for (final event in events) {
       if (event.position > maxPosition) {
         maxPosition = event.position;
@@ -437,24 +455,28 @@ class AnalyticsService {
     final durationEvents = events.where((e) => e.duration != null);
     if (durationEvents.isNotEmpty) {
       final duration = durationEvents.first.duration!;
-      return (maxPosition.inMilliseconds / duration.inMilliseconds * 100)
-          .clamp(0.0, 100.0);
+      return (maxPosition.inMilliseconds / duration.inMilliseconds * 100).clamp(
+        0.0,
+        100.0,
+      );
     }
 
-    return 0.0;
+    return 0;
   }
 
   /// Calculate interaction rate (interactions per minute of play time)
   double _calculateInteractionRate(
-      List<InteractionEvent> interactions, Duration playTime) {
-    if (playTime.inSeconds == 0) return 0.0;
+    List<InteractionEvent> interactions,
+    Duration playTime,
+  ) {
+    if (playTime.inSeconds == 0) return 0;
     return interactions.length /
         (playTime.inMinutes > 0 ? playTime.inMinutes : 1.0);
   }
 
   /// Calculate performance score (0-100)
   double _calculatePerformanceScore(PerformanceMetrics metrics) {
-    double score = 100.0;
+    var score = 100.0;
 
     // Penalize for frame drops
     if (metrics.totalFrames > 0) {
@@ -492,15 +514,6 @@ class AnalyticsService {
 
 /// Analytics summary for a reel session
 class AnalyticsSummary {
-  final Duration totalPlayTime;
-  final double watchPercentage;
-  final double interactionRate;
-  final int bufferingEvents;
-  final double performanceScore;
-  final int likesCount;
-  final int commentsCount;
-  final int sharesCount;
-
   const AnalyticsSummary({
     required this.totalPlayTime,
     required this.watchPercentage,
@@ -515,15 +528,23 @@ class AnalyticsSummary {
   factory AnalyticsSummary.empty() {
     return const AnalyticsSummary(
       totalPlayTime: Duration.zero,
-      watchPercentage: 0.0,
-      interactionRate: 0.0,
+      watchPercentage: 0,
+      interactionRate: 0,
       bufferingEvents: 0,
-      performanceScore: 0.0,
+      performanceScore: 0,
       likesCount: 0,
       commentsCount: 0,
       sharesCount: 0,
     );
   }
+  final Duration totalPlayTime;
+  final double watchPercentage;
+  final double interactionRate;
+  final int bufferingEvents;
+  final double performanceScore;
+  final int likesCount;
+  final int commentsCount;
+  final int sharesCount;
 
   Map<String, dynamic> toJson() {
     return {

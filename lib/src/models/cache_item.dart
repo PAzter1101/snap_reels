@@ -1,70 +1,51 @@
-/// Cache item data model
-class CacheItem {
-  final String cacheKey;
-  final String filePath;
-  final String url;
-  final DateTime createdAt;
-  final int fileSize;
-  DateTime lastAccessTime; // Mutable for LRU tracking
-  final DateTime expiryTime;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  CacheItem({
-    required this.cacheKey,
-    required this.filePath,
-    required this.url,
-    required this.createdAt,
-    required this.fileSize,
-    required this.lastAccessTime,
-    required this.expiryTime,
-  });
+part 'cache_item.freezed.dart';
+part 'cache_item.g.dart';
 
+/// On-disk cache entry tracked by the LRU manager.
+@freezed
+abstract class CacheItem with _$CacheItem {
+  const factory CacheItem({
+    required String cacheKey,
+    required String filePath,
+    required String url,
+    required DateTime createdAt,
+    required int fileSize,
+    required DateTime lastAccessTime,
+    required DateTime expiryTime,
+  }) = _CacheItem;
+
+  const CacheItem._();
+
+  factory CacheItem.fromJson(Map<String, Object?> json) =>
+      _$CacheItemFromJson(json);
+
+  /// True once the entry's [expiryTime] has passed.
   bool get isExpired => DateTime.now().isAfter(expiryTime);
-
-  Map<String, dynamic> toJson() => {
-        'cacheKey': cacheKey,
-        'filePath': filePath,
-        'url': url,
-        'createdAt': createdAt.toIso8601String(),
-        'fileSize': fileSize,
-        'lastAccessTime': lastAccessTime.toIso8601String(),
-        'expiryTime': expiryTime.toIso8601String(),
-      };
-
-  factory CacheItem.fromJson(Map<String, dynamic> json) => CacheItem(
-        cacheKey: json['cacheKey'] as String,
-        filePath: json['filePath'] as String,
-        url: json['url'] as String,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        fileSize: json['fileSize'] as int,
-        lastAccessTime: DateTime.parse(json['lastAccessTime'] as String),
-        expiryTime: DateTime.parse(json['expiryTime'] as String),
-      );
 }
 
-/// Cache statistics
-class CacheStats {
-  final int totalFiles;
-  final int totalSize;
-  final int expiredFiles;
-  final String cacheDirectory;
+/// Snapshot of cache directory state for diagnostics and UI.
+@freezed
+abstract class CacheStats with _$CacheStats {
+  const factory CacheStats({
+    required int totalFiles,
+    required int totalSize,
+    required int expiredFiles,
+    required String cacheDirectory,
+  }) = _CacheStats;
 
-  const CacheStats({
-    required this.totalFiles,
-    required this.totalSize,
-    required this.expiredFiles,
-    required this.cacheDirectory,
-  });
+  const CacheStats._();
 
-  factory CacheStats.empty() {
-    return const CacheStats(
-      totalFiles: 0,
-      totalSize: 0,
-      expiredFiles: 0,
-      cacheDirectory: '',
-    );
-  }
+  /// Empty stats, useful as an initial value before the cache is scanned.
+  factory CacheStats.empty() => const CacheStats(
+    totalFiles: 0,
+    totalSize: 0,
+    expiredFiles: 0,
+    cacheDirectory: '',
+  );
 
-  /// Get human readable size
+  /// Human-readable size with binary unit suffix.
   String get humanReadableSize {
     if (totalSize < 1024) return '${totalSize}B';
     if (totalSize < 1024 * 1024) {
@@ -74,10 +55,5 @@ class CacheStats {
       return '${(totalSize / (1024 * 1024)).toStringAsFixed(1)}MB';
     }
     return '${(totalSize / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
-  }
-
-  @override
-  String toString() {
-    return 'CacheStats(files: $totalFiles, size: $humanReadableSize, expired: $expiredFiles)';
   }
 }

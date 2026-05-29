@@ -1,0 +1,4 @@
+# build_runner outputs: collapse diff and exclude from language stats.
+*.freezed.dart linguist-generated=true
+*.g.dart       linguist-generated=true
+*.mocks.dart   linguist-generated=true

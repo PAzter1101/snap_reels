@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -16,15 +17,15 @@ class ReelUtils {
 
     if (duration.inHours > 0) {
       final hours = twoDigits(duration.inHours);
-      return "$hours:$minutes:$seconds";
+      return '$hours:$minutes:$seconds';
     }
 
-    return "$minutes:$seconds";
+    return '$minutes:$seconds';
   }
 
   /// Format duration from milliseconds to string
   static String formatDurationFromMilliseconds(int? milliseconds) {
-    if (milliseconds == null) return "00:00";
+    if (milliseconds == null) return '00:00';
     return formatDuration(Duration(milliseconds: milliseconds));
   }
 
@@ -32,18 +33,18 @@ class ReelUtils {
   static String formatCount(int count) {
     if (count < 1000) return count.toString();
     if (count < 1000000) {
-      double value = count / 1000;
+      final value = count / 1000;
       return value % 1 == 0
           ? '${value.toInt()}K'
           : '${value.toStringAsFixed(1)}K';
     }
     if (count < 1000000000) {
-      double value = count / 1000000;
+      final value = count / 1000000;
       return value % 1 == 0
           ? '${value.toInt()}M'
           : '${value.toStringAsFixed(1)}M';
     }
-    double value = count / 1000000000;
+    final value = count / 1000000000;
     return value % 1 == 0
         ? '${value.toInt()}B'
         : '${value.toStringAsFixed(1)}B';
@@ -89,17 +90,17 @@ class ReelUtils {
       '.flv',
       '.wmv',
       '.m4v',
-      '.3gp'
+      '.3gp',
     ];
 
     final lowercaseUrl = url.toLowerCase();
-    return videoExtensions.any((ext) => lowercaseUrl.contains(ext));
+    return videoExtensions.any(lowercaseUrl.contains);
   }
 
   /// Extract video ID from various video platforms
   static String? extractVideoId(String url) {
     // YouTube
-    RegExp youtubeRegex = RegExp(
+    final youtubeRegex = RegExp(
       r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})',
       caseSensitive: false,
     );
@@ -110,7 +111,7 @@ class ReelUtils {
     }
 
     // Vimeo
-    RegExp vimeoRegex = RegExp(r'vimeo\.com\/(\d+)', caseSensitive: false);
+    final vimeoRegex = RegExp(r'vimeo\.com\/(\d+)', caseSensitive: false);
     final vimeoMatch = vimeoRegex.firstMatch(url);
     if (vimeoMatch != null) {
       return vimeoMatch.group(1);
@@ -145,7 +146,9 @@ class ReelUtils {
 
   /// Get responsive font size based on screen size
   static double getResponsiveFontSize(
-      BuildContext context, double baseFontSize) {
+    BuildContext context,
+    double baseFontSize,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final scaleFactor = screenWidth / 375; // Base width (iPhone 6/7/8)
     return baseFontSize * scaleFactor.clamp(0.8, 1.2);
@@ -153,7 +156,9 @@ class ReelUtils {
 
   /// Get responsive padding based on screen size
   static EdgeInsets getResponsivePadding(
-      BuildContext context, EdgeInsets basePadding) {
+    BuildContext context,
+    EdgeInsets basePadding,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final scaleFactor = screenWidth / 375; // Base width
 
@@ -228,23 +233,30 @@ class ReelUtils {
 
   /// Generate gradient colors
   static List<Color> generateGradient(
-      Color startColor, Color endColor, int steps) {
+    Color startColor,
+    Color endColor,
+    int steps,
+  ) {
     final colors = <Color>[];
 
-    for (int i = 0; i < steps; i++) {
+    for (var i = 0; i < steps; i++) {
       final ratio = i / (steps - 1);
-      final red = ((startColor.r * 255.0) +
-              ((endColor.r - startColor.r) * 255.0) * ratio)
-          .round();
-      final green = ((startColor.g * 255.0) +
-              ((endColor.g - startColor.g) * 255.0) * ratio)
-          .round();
-      final blue = ((startColor.b * 255.0) +
-              ((endColor.b - startColor.b) * 255.0) * ratio)
-          .round();
-      final alpha = ((startColor.a * 255.0) +
-              ((endColor.a - startColor.a) * 255.0) * ratio)
-          .round();
+      final red =
+          ((startColor.r * 255.0) +
+                  ((endColor.r - startColor.r) * 255.0) * ratio)
+              .round();
+      final green =
+          ((startColor.g * 255.0) +
+                  ((endColor.g - startColor.g) * 255.0) * ratio)
+              .round();
+      final blue =
+          ((startColor.b * 255.0) +
+                  ((endColor.b - startColor.b) * 255.0) * ratio)
+              .round();
+      final alpha =
+          ((startColor.a * 255.0) +
+                  ((endColor.a - startColor.a) * 255.0) * ratio)
+              .round();
       colors.add(Color.fromARGB(alpha, red, green, blue));
     }
 
@@ -270,7 +282,12 @@ class ReelUtils {
 
   /// Map value from one range to another
   static double mapRange(
-      double value, double inMin, double inMax, double outMin, double outMax) {
+    double value,
+    double inMin,
+    double inMax,
+    double outMin,
+    double outMax,
+  ) {
     return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
   }
 
@@ -329,10 +346,13 @@ class ReelUtils {
 
   /// Capitalize first letter of each word
   static String capitalizeWords(String text) {
-    return text.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    return text
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 
   /// Truncate text with ellipsis

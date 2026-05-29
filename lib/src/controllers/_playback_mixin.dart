@@ -111,7 +111,7 @@ mixin _PlaybackMixin on GetxController, _ReelStateMixin {
   }
 
   Duration getAccumulatedPlayTime() {
-    Duration total = _accumulatedPlayTime;
+    var total = _accumulatedPlayTime;
     if (_playStartTime != null && _isPlaying.value) {
       total += DateTime.now().difference(_playStartTime!);
     }

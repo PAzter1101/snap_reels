@@ -38,7 +38,7 @@ mixin _PreloadManagerMixin
     if (ahead <= 0 && behind <= 0) return;
     final start = (currentIndex - behind).clamp(0, _reels.length);
     final end = (currentIndex + ahead + 1).clamp(0, _reels.length);
-    for (int i = start; i < end; i++) {
+    for (var i = start; i < end; i++) {
       if (i == currentIndex) continue;
       final reel = _reels[i];
       final primary = reel.thumbnailUrl;
@@ -65,7 +65,7 @@ mixin _PreloadManagerMixin
     try {
       debugPrint('Preloading video at index $index');
       final slot = _getRecyclableSlot(index);
-      await _openSlot(slot, _reels[index], play: false);
+      await _openSlot(slot, _reels[index]);
       debugPrint('Successfully preloaded video at index $index');
     } catch (e) {
       debugPrint('Error preloading video at index $index: $e');
@@ -75,7 +75,7 @@ mixin _PreloadManagerMixin
   /// Stop non-active players to free decoder memory (without destroying them).
   void handleMemoryPressure() {
     debugPrint('snap_reels: memory pressure — stopping non-active players');
-    for (int i = 0; i < _players.length; i++) {
+    for (var i = 0; i < _players.length; i++) {
       if (i == _activeSlot) continue;
       _players[i].stop();
       final reelIndex = _slotToReel.remove(i);

@@ -4,9 +4,19 @@ import 'package:crypto/crypto.dart';
 
 /// Параметры, которые являются CDN-токенами и не должны влиять на cache key.
 const _tokenParams = {
-  'token', 'sig', 'signature', 'expires', 'exp',
-  'auth', 'key', 'st', 'e', 'Policy', 'Key-Pair-Id',
-  'Signature', 'Expires',
+  'token',
+  'sig',
+  'signature',
+  'expires',
+  'exp',
+  'auth',
+  'key',
+  'st',
+  'e',
+  'Policy',
+  'Key-Pair-Id',
+  'Signature',
+  'Expires',
 };
 
 /// Нормализует URL, убирая CDN-токены из query-параметров.

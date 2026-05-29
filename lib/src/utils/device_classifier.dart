@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 
-import '../models/reel_config.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+
+import 'package:snap_reels/src/models/reel_config.dart';
 
 /// Класс устройства по производительности.
 enum DeviceClass { low, medium, high }

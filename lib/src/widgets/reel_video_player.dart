@@ -1,35 +1,36 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import '../models/reel_model.dart';
-import '../models/reel_config.dart';
-import '../controllers/reel_controller.dart';
-import 'cached_thumbnail.dart';
-import 'package:get/get.dart';
+
+import 'package:snap_reels/src/controllers/reel_controller.dart';
+import 'package:snap_reels/src/models/reel_config.dart';
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/widgets/cached_thumbnail.dart';
 
 /// Video player widget for reels.
 ///
 /// Creates its own [VideoController] for the [Player] from the pool.
 /// Verifies on every build that the player still belongs to this reel.
 class ReelVideoPlayer extends StatefulWidget {
+  const ReelVideoPlayer({
+    required this.reel,
+    required this.controller,
+    required this.config,
+    super.key,
+    this.errorBuilder,
+    this.loadingBuilder,
+  });
   final ReelModel reel;
   final ReelController controller;
   final ReelConfig config;
   final Widget Function(BuildContext context, ReelModel reel, String error)?
   errorBuilder;
   final Widget Function(BuildContext context, ReelModel reel)? loadingBuilder;
-
-  const ReelVideoPlayer({
-    super.key,
-    required this.reel,
-    required this.controller,
-    required this.config,
-    this.errorBuilder,
-    this.loadingBuilder,
-  });
 
   @override
   State<ReelVideoPlayer> createState() => _ReelVideoPlayerState();
@@ -137,10 +138,10 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Video всегда в дереве: surface texture создаётся в момент
-          // первого build, libmpv получает готовый render sink на старте.
-          // Без этого playback может стопориться через 1–2 секунды на
-          // release-сборке (см. media-kit/media-kit#909).
+          // Always keep Video in the tree so the surface texture is
+          // allocated up-front and libmpv has a render sink ready on
+          // start. Skipping this can stall playback ~1–2s into release
+          // builds (see media-kit/media-kit#909).
           if (_videoController != null)
             SizedBox.expand(
               child: Video(
@@ -148,16 +149,16 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
                 controller: _videoController!,
                 fit: BoxFit.cover,
                 fill: Colors.transparent,
-                controls: NoVideoControls,
+                controls: null,
               ),
             ),
-          // Thumbnail поверх video, скрывается на первом декодированном кадре.
+          // Thumbnail sits above the video and hides on the first decoded frame.
           Obx(
             () => _hasFirstFrame.value
                 ? const SizedBox.shrink()
                 : _buildThumbnail(),
           ),
-          Obx(() => _buildLoadingOverlay()),
+          Obx(_buildLoadingOverlay),
         ],
       ),
     );

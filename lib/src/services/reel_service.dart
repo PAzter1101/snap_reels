@@ -1,11 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import '../models/reel_model.dart';
+
+import 'package:snap_reels/src/models/reel_model.dart';
 
 class ReelService {
-  static final ReelService _instance = ReelService._internal();
   factory ReelService() => _instance;
   ReelService._internal();
+  static final ReelService _instance = ReelService._internal();
 
   final _cache = <String, ReelModel>{};
   final _loadingStates = <String, bool>{};

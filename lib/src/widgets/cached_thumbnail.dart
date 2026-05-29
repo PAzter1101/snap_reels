@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../models/reel_model.dart';
-import '../services/cache_manager.dart';
+import 'package:dio/dio.dart' show Dio;
+
+import 'package:snap_reels/src/models/reel_model.dart';
+import 'package:snap_reels/src/services/cache_manager.dart';
 
 /// Thumbnail image that goes through [CacheManager] instead of
 /// [Image.network]. Reuses the host app's [Dio] (typically backed by

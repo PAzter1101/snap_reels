@@ -1,5 +1,13 @@
 /// Configuration for caching
 class CacheConfig {
+  const CacheConfig({
+    this.maxCacheSize = 100 * 1024 * 1024, // 100MB
+    this.cacheDuration = const Duration(days: 7),
+    this.preloadCount = 2,
+    this.cacheThumbnails = true,
+    this.cacheDirectoryName,
+  });
+
   /// Maximum cache size in bytes (default: 100MB)
   final int maxCacheSize;
 
@@ -14,18 +22,20 @@ class CacheConfig {
 
   /// Custom cache directory name
   final String? cacheDirectoryName;
-
-  const CacheConfig({
-    this.maxCacheSize = 100 * 1024 * 1024, // 100MB
-    this.cacheDuration = const Duration(days: 7),
-    this.preloadCount = 2,
-    this.cacheThumbnails = true,
-    this.cacheDirectoryName,
-  });
 }
 
 /// Configuration for preloading
 class PreloadConfig {
+  const PreloadConfig({
+    this.preloadAhead = 2,
+    this.preloadBehind = 1,
+    this.preloadOnWiFiOnly = false,
+    this.maxPreloaded = 5,
+    this.adaptivePreload = true,
+    this.thumbnailPreloadAhead = 5,
+    this.thumbnailPreloadBehind = 2,
+  });
+
   /// Number of videos to preload ahead
   final int preloadAhead;
 
@@ -49,16 +59,6 @@ class PreloadConfig {
   /// Number of thumbnails to prefetch behind the current reel. Set to 0
   /// to disable.
   final int thumbnailPreloadBehind;
-
-  const PreloadConfig({
-    this.preloadAhead = 2,
-    this.preloadBehind = 1,
-    this.preloadOnWiFiOnly = false,
-    this.maxPreloaded = 5,
-    this.adaptivePreload = true,
-    this.thumbnailPreloadAhead = 5,
-    this.thumbnailPreloadBehind = 2,
-  });
 
   PreloadConfig copyWith({
     int? preloadAhead,
