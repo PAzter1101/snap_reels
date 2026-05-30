@@ -18,7 +18,7 @@ _VideoSource _$VideoSourceFromJson(Map<String, dynamic> json) => _VideoSource(
   bitrate: (json['bitrate'] as num?)?.toInt(),
   dimensions: json['dimensions'] == null
       ? null
-      : Size.fromJson(json['dimensions'] as Map<String, dynamic>),
+      : VideoSize.fromJson(json['dimensions'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$VideoSourceToJson(_VideoSource instance) =>

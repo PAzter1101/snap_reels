@@ -71,9 +71,9 @@ class ReelUtils {
   /// See [TimingUtils.debounce].
   static Timer debounce(
     void Function() function,
-    Duration delay, {
+    Duration delay, [
     Timer? previousTimer,
-  }) => TimingUtils.debounce(function, delay, previousTimer: previousTimer);
+  ]) => TimingUtils.debounce(function, delay, previousTimer);
 
   /// See [TimingUtils.throttle].
   static bool throttle(String key, Duration duration) =>

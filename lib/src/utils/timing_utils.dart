@@ -10,9 +10,9 @@ class TimingUtils {
   /// (or `null`) and store the returned timer for the next call.
   static Timer debounce(
     void Function() function,
-    Duration delay, {
+    Duration delay, [
     Timer? previousTimer,
-  }) {
+  ]) {
     previousTimer?.cancel();
     return Timer(delay, function);
   }

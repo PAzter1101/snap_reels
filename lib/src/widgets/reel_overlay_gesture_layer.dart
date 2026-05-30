@@ -110,29 +110,32 @@ class _ReelOverlayGestureLayerState extends State<ReelOverlayGestureLayer>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      onLongPress: widget.onLongPress,
-      onLongPressStart: (_) {
-        if (widget.onLongPress != null) {
-          widget.onLongPress!();
-        } else {
-          _handleLongPressStart();
-        }
-      },
-      onLongPressEnd: (_) {
-        if (widget.onLongPress != null) {
-          widget.onLongPress!();
-        } else {
-          _handleLongPressEnd();
-        }
-      },
-      child: Stack(
-        children: [
-          widget.child,
-          Obx(
-            () => _showFlash.value
-                ? Center(
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        GestureDetector(
+          onTap: _handleTap,
+          onLongPress: widget.onLongPress,
+          onLongPressStart: (_) {
+            if (widget.onLongPress != null) {
+              widget.onLongPress!();
+            } else {
+              _handleLongPressStart();
+            }
+          },
+          onLongPressEnd: (_) {
+            if (widget.onLongPress != null) {
+              widget.onLongPress!();
+            } else {
+              _handleLongPressEnd();
+            }
+          },
+          child: widget.child,
+        ),
+        Obx(
+          () => _showFlash.value
+              ? IgnorePointer(
+                  child: Center(
                     child: ScaleTransition(
                       scale: _flashAnimation,
                       child: Container(
@@ -152,11 +155,11 @@ class _ReelOverlayGestureLayerState extends State<ReelOverlayGestureLayer>
                         ),
                       ),
                     ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }

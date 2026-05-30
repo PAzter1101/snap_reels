@@ -3,7 +3,7 @@ export 'src/controllers/reel_controller.dart';
 export 'src/models/reel_analytics.dart';
 export 'src/models/reel_config.dart';
 export 'src/models/reel_model.dart'
-    show ReelAudio, ReelModel, ReelUser, VideoFormat, VideoSource;
+    show ReelAudio, ReelModel, ReelUser, VideoFormat, VideoSize, VideoSource;
 export 'src/services/analytics_service.dart';
 export 'src/services/cache_manager.dart';
 export 'src/services/streaming_service.dart';

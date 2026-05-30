@@ -1,47 +1,47 @@
 # Snap Reels
 
-Flutter-пакет для создания вертикальных видеолент в стиле Instagram Reels / TikTok с продвинутой поддержкой стриминга (HLS, DASH, MP4).
+Flutter package for building Instagram Reels / TikTok-style vertical video feeds with advanced streaming support (HLS, DASH, MP4).
 
-> Fork [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) от wailashraf71, развивается независимо.
+> Fork of [flutter_awesome_reels](https://github.com/wailashraf71/flutter_awesome_reels) by wailashraf71; developed independently.
 
-## Возможности
+## Features
 
-### Видео-стриминг
-- **HLS** — адаптивный стриминг, оптимален для iOS
-- **DASH** — высококачественный стриминг, оптимален для Android
-- **MP4** — универсальный формат
-- **Автовыбор формата** — по платформе и состоянию сети
-- **DRM** — кастомные HTTP-заголовки для авторизации
+### Video streaming
+- **HLS** — adaptive streaming, preferred on iOS
+- **DASH** — high-quality streaming, preferred on Android
+- **MP4** — universal fallback
+- **Auto format selection** — by platform and network conditions
+- **DRM** — custom HTTP headers for authorization
 
-### Производительность
-- **Player Pool** — фиксированный пул из 3 `Player`'ов (media_kit). При свайпе декодер переиспользуется через `player.open()`, без create/dispose цикла
-- **Адаптивный preload** — на слабых устройствах preload автоматически снижается
-- **Memory pressure** — при нехватке памяти неактивные Player'ы останавливаются
-- **SHA-256 кеш** — нормализация CDN-токенов, без дублей в кеше
-- **Debounced preload** — при быстром скролле промежуточные preload'ы пропускаются
+### Performance
+- **Player pool** — fixed pool of 3 `media_kit` `Player`s. Decoders are reused across swipes via `player.open()` instead of create/dispose cycles.
+- **Adaptive preload** — preload is reduced automatically on low-end devices.
+- **Memory pressure** — non-active players are stopped when the platform signals memory pressure.
+- **SHA-256 cache** — CDN tokens are stripped from the key so the same asset isn't cached multiple times.
+- **Debounced preload** — fast swipes skip intermediate preload windows.
 
-### UI/UX
-- Интерфейс в стиле Instagram с привычными жестами
-- Настраиваемый progress indicator с drag-to-seek и превью
-- Shimmer-эффект при загрузке
-- Play/pause анимация, double-tap лайк, long press пауза
-- Кастомные виджеты ошибок и загрузки
+### UI / UX
+- Instagram-style interface with familiar gestures.
+- Configurable progress indicator with drag-to-seek and thumbnail preview.
+- Shimmer placeholder while the first frame loads.
+- Play/pause animation, double-tap like, long-press pause.
+- Custom error and loading widgets.
 
-## Установка
+## Installation
 
 ```yaml
 dependencies:
   snap_reels: ^2.3.3
 ```
 
-### Требования
+### Requirements
 - Flutter ≥ 3.0
-- Android 5.0+ (реальное устройство)
+- Android 5.0+ (real device)
 - iOS 12+
 
-> **⚠️ Android-эмулятор не поддерживается** — media_kit использует hardware-декодеры через libmpv, которые не работают на эмуляторе. Тестируйте на реальном устройстве (USB или [wireless debugging](https://developer.android.com/studio/run/device#wireless)).
+> **⚠️ Android emulator is not supported** — media_kit uses hardware decoders via libmpv that don't work on the emulator. Test on a real device (USB or [wireless debugging](https://developer.android.com/studio/run/device#wireless)).
 
-## Быстрый старт
+## Quick start
 
 ```dart
 import 'package:flutter/material.dart';
@@ -81,7 +81,9 @@ class _MyReelsPageState extends State<MyReelsPage> {
       body: SnapReels(
         reels: _controller.reels,
         controller: _controller,
-        config: const ReelConfig(showDownloadButton: false),
+        config: const ReelConfig(
+          actions: ReelActionsConfig(showDownloadButton: false),
+        ),
         onReelChanged: (index) => debugPrint('Reel: $index'),
         onReelLiked: (reel) => debugPrint('Liked: ${reel.id}'),
         onVideoError: (reel, error) => debugPrint('Error: $error'),
@@ -97,15 +99,15 @@ class _MyReelsPageState extends State<MyReelsPage> {
 }
 ```
 
-## Многоформатный стриминг
+## Multi-format streaming
 
 ```dart
 final reel = ReelModel(
   id: 'multi_1',
   videoSource: VideoSource(
+    url: 'https://example.com/video.m3u8',
     format: VideoFormat.hls,
-    urls: {
-      VideoFormat.hls: 'https://example.com/video.m3u8',
+    alternativeSources: {
       VideoFormat.dash: 'https://example.com/video.mpd',
       VideoFormat.mp4: 'https://example.com/video.mp4',
     },
@@ -113,7 +115,7 @@ final reel = ReelModel(
   thumbnailUrl: 'https://example.com/thumb.jpg',
   duration: const Duration(minutes: 3),
   user: const ReelUser(id: 'user1', username: 'creator'),
-  caption: 'Видео с fallback-форматами',
+  caption: 'Video with fallback formats',
 );
 
 final config = ReelConfig(
@@ -130,57 +132,119 @@ final config = ReelConfig(
 );
 ```
 
-## Конфигурация
+## Configuration
 
 ### ReelConfig
 
-| Свойство | Тип | По умолчанию | Описание |
-|----------|-----|-------------|----------|
-| `enableCaching` | `bool` | `true` | Кеширование видео на диск |
-| `cacheConfig` | `CacheConfig` | `CacheConfig()` | Настройки кеша |
-| `preloadConfig` | `PreloadConfig` | `PreloadConfig()` | Настройки preload |
-| `autoPlay` | `bool` | `true` | Автозапуск при появлении на экране |
-| `showDownloadButton` | `bool` | `true` | Кнопка скачивания |
-| `showHashtags` | `bool` | `true` | Хештеги под описанием |
-| `enablePullToRefresh` | `bool` | `false` | Pull-to-refresh |
+Fields are grouped into sub-configs:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `styling` | `ReelStylingConfig` | Colors (`backgroundColor`, `accentColor`, `textColor`, …), shimmer, caption, padding |
+| `actions` | `ReelActionsConfig` | Button visibility / sizes (`showFollowButton`, `actionMinTapTargetSize`, …), more-menu (`reportLabel`, `customActions`, …) |
+| `builders` | `ReelOverlayBuildersConfig` | UI overrides: `errorWidgetBuilder`, `loadingWidgetBuilder`, `bufferingBuilder`, `thumbnailFallbackBuilder`, `thumbnailProxyUrlBuilder` |
+| `callbacks` | `ReelInteractionCallbacks` | Side-effect callbacks: `onCommentTap`, `onShareTap`, `onHashtagTap`, `onPlay`, `onPause`, `onSeek`, … |
+| `progressIndicatorConfig` | `ProgressIndicatorConfig` | Progress bar styling |
+| `videoPlayerConfig` | `VideoPlayerConfig` | Player behavior + `streamingConfig` |
+| `preloadConfig` | `PreloadConfig` | Preload parameters |
+| `cacheConfig` | `CacheConfig?` | Cache parameters (`null` = defaults) |
+
+Remaining top-level fields: `httpClient`, `showProgressIndicator`, `showControlsOverlay`, `enableCaching`, `enableAnalytics`, `enablePullToRefresh`, `onRefresh`, `enableInfiniteScroll`, `onLoadMore`, `loadMoreThreshold`, `keepScreenAwake`, `autoPlay`, `loop`, `volume`, `progressBarPadding`.
 
 ### PreloadConfig
 
-| Свойство | Тип | По умолчанию | Описание |
-|----------|-----|-------------|----------|
-| `preloadAhead` | `int` | `2` | Сколько видео preload'ить вперёд |
-| `preloadBehind` | `int` | `1` | Сколько видео держать позади |
-| `adaptivePreload` | `bool` | `true` | Снижать preload на слабых устройствах |
-| `preloadOnWiFiOnly` | `bool` | `false` | Preload только по WiFi |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `preloadAhead` | `int` | `2` | How many videos to preload ahead |
+| `preloadBehind` | `int` | `1` | How many videos to keep behind |
+| `adaptivePreload` | `bool` | `true` | Reduce preload on low-end devices |
+| `preloadOnWiFiOnly` | `bool` | `false` | Preload only on Wi-Fi |
 
 ### StreamingConfig
 
-| Свойство | Тип | По умолчанию | Описание |
-|----------|-----|-------------|----------|
-| `preferredFormat` | `PreferredStreamingFormat` | `auto` | Предпочтительный формат |
-| `enableCaching` | `bool` | `true` | Кеширование стримов |
-| `drmHeaders` | `Map<String,String>?` | `null` | HTTP-заголовки для DRM/auth |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `preferredFormat` | `PreferredStreamingFormat` | `auto` | Preferred format |
+| `enableCaching` | `bool` | `true` | Cache streams |
+| `drmHeaders` | `Map<String,String>?` | `null` | HTTP headers for DRM / auth |
 
-## Миграция
+## Migration
+
+### 2.x → 3.0.0
+
+**1. ReelConfig: top-level fields grouped into sub-configs.** All colors / button visibility / sizes / builders / callbacks moved under `styling` / `actions` / `builders` / `callbacks`. Mapping:
+
+| Old `ReelConfig` field | New location |
+|---|---|
+| `backgroundColor`, `accentColor`, `textColor`, `progressColor`, `followButtonColor`, `followingButtonColor`, `showShimmerWhileLoading`, `shimmerConfig`, `maxCaptionLines`, `showHashtags`, `contentBottomPadding` | `styling: ReelStylingConfig(...)` |
+| `showFollowButton`, `showBookmarkButton`, `showDownloadButton`, `showMoreButton`, `showCommentButton`, `showBottomControls`, `bookmarkInMoreMenu`, `downloadInMoreMenu`, `actionMinTapTargetSize`, `actionIconSize`, `likeButtonSize`, `actionSpacing`, `hashtagMinTapTargetSize`, `customActions`, `reportLabel`, `blockLabel`, `copyLinkLabel` | `actions: ReelActionsConfig(...)` |
+| `errorWidgetBuilder`, `loadingWidgetBuilder`, `errorDialogBuilder`, `bufferingBuilder`, `thumbnailFallbackBuilder`, `thumbnailProxyUrlBuilder`, `thumbnailLoadTimeout` | `builders: ReelOverlayBuildersConfig(...)` |
+| `onCommentTap`, `onShareTap`, `onDownloadTap`, `onHashtagTap`, `onReportTap`, `onBlockTap`, `onCopyLinkTap`, `onPlay`, `onPause`, `onSeek` | `callbacks: ReelInteractionCallbacks(...)` |
+
+Example:
+
+```dart
+// Before
+ReelConfig(
+  accentColor: Colors.red,
+  showDownloadButton: false,
+  bufferingBuilder: (_) => MyBufferingWidget(),
+  onShareTap: (reel) => share(reel),
+)
+
+// After
+ReelConfig(
+  styling: ReelStylingConfig(accentColor: Colors.red),
+  actions: ReelActionsConfig(showDownloadButton: false),
+  builders: ReelOverlayBuildersConfig(
+    bufferingBuilder: (_) => MyBufferingWidget(),
+  ),
+  callbacks: ReelInteractionCallbacks(
+    onShareTap: (reel) => share(reel),
+  ),
+)
+```
+
+**2. Video frame size: `Size` → `VideoSize`.** Renamed to avoid a clash with Flutter's `dart:ui.Size`. If you used `VideoSource(dimensions: Size(1920, 1080))`, replace with `VideoSize(1920, 1080)`.
+
+**3. Analytics bool parameters are now named.** Per VGA `avoid_positional_boolean_parameters`:
+
+```dart
+// Before
+AnalyticsService().trackLike(reelId, position, true);
+AnalyticsService().trackFollow(reelId, position, true);
+
+// After
+AnalyticsService().trackLike(reelId, position, isLiked: true);
+AnalyticsService().trackFollow(reelId, position, isFollowing: true);
+```
+
+**4. ReelController API cleanup.** Removed no-op stubs `toggleLike`, `incrementShare`, `downloadReel`, `blockUser`, `followUser`, and the `refresh()` override (the host now receives events via callbacks / `onRefresh`). Removed the unwired `ReelConfig.preloadRange` field — configure preload via `preloadConfig: PreloadConfig(preloadAhead, preloadBehind)`.
+
+**5. ReelController.close() for guaranteed cleanup.** `dispose()` is synchronous (Flutter limitation) and now best-effort fires `close()`. To deterministically release native resources (libmpv) before reallocating a controller, call `await controller.close()` explicitly before `dispose()`.
+
+**6. Android plugin packaging.** The package is now a Flutter plugin with `android/consumer-rules.pro`. Host apps no longer need to hand-copy media_kit / libmpv ProGuard keep rules — they are merged automatically via `consumerProguardFiles`. Drop the duplicates from your own `proguard-rules.pro`.
+
+---
 
 ### 2.0.0 → 2.1.0
 
-**1. Зависимости**: `video_player` заменён на `media_kit`. Если ваше приложение импортирует `video_player` напрямую — это не затрагивается, пакеты независимы.
+**1. Dependencies**: `video_player` was replaced by `media_kit`. If your app imports `video_player` directly, that's untouched — the packages are independent.
 
-**2. Эмулятор**: видеовоспроизведение работает только на реальных Android-устройствах. UI и навигация по ленте работают на эмуляторе (thumbnail отображаются).
+**2. Emulator**: video playback only works on real Android devices. UI and feed navigation work on the emulator (thumbnails render).
 
-**3. API**: публичный API `ReelController`, `SnapReels`, `ReelConfig`, `ReelModel` не изменился. Обновление прозрачное.
+**3. API**: the public API of `ReelController`, `SnapReels`, `ReelConfig`, `ReelModel` is unchanged. Transparent upgrade.
 
 ### 1.x → 2.0.0
 
-Замените `AwesomeReels` на `SnapReels`:
+Replace `AwesomeReels` with `SnapReels`:
 
 ```dart
-// До
+// Before
 AwesomeReels(reels: reels, controller: ctrl, config: config)
 
-// После
+// After
 SnapReels(reels: reels, controller: ctrl, config: config)
 ```
 
-Удалите `enableAdaptiveBitrate` из `StreamingConfig` (deprecated, без эффекта).
+Remove `enableAdaptiveBitrate` from `StreamingConfig` (deprecated, no-op).

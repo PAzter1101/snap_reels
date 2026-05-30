@@ -6,12 +6,10 @@ part of 'video_size.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_Size _$SizeFromJson(Map<String, dynamic> json) => _Size(
+_VideoSize _$VideoSizeFromJson(Map<String, dynamic> json) => _VideoSize(
   (json['width'] as num).toDouble(),
   (json['height'] as num).toDouble(),
 );
 
-Map<String, dynamic> _$SizeToJson(_Size instance) => <String, dynamic>{
-  'width': instance.width,
-  'height': instance.height,
-};
+Map<String, dynamic> _$VideoSizeToJson(_VideoSize instance) =>
+    <String, dynamic>{'width': instance.width, 'height': instance.height};

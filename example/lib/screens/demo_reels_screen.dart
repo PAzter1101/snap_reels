@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:snap_reels/snap_reels.dart';
 
@@ -62,7 +64,7 @@ class _DemoReelsScreenState extends State<DemoReelsScreen> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    unawaited(_controller.close());
     super.dispose();
   }
 

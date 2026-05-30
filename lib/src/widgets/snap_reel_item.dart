@@ -113,8 +113,14 @@ class SnapReelItem extends StatelessWidget {
             onLike: () => onLike?.call(reel),
             onShare: () => onShare?.call(reel),
             onComment: () => onComment?.call(reel),
-            onFollow: () => onFollow?.call(reel.user!),
-            onBlock: () => onBlock?.call(reel.user!),
+            onFollow: () {
+              final user = reel.user;
+              if (user != null) onFollow?.call(user);
+            },
+            onBlock: () {
+              final user = reel.user;
+              if (user != null) onBlock?.call(user);
+            },
             onCompleted: () => onCompleted?.call(reel),
           ),
       ],

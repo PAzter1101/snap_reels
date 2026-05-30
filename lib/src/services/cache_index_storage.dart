@@ -6,11 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:snap_reels/src/models/cache_item.dart';
 
-/// JSON-backed persistence for the in-memory cache index.
-///
-/// Stores a single file `cache_index.json` inside [directory]. Failures
-/// during read/write are logged and swallowed so callers can keep
-/// operating with a degraded (empty) index.
+/// JSON-backed persistence for the cache index.
 class CacheIndexStorage {
   /// Creates a storage rooted at [directory].
   CacheIndexStorage(this.directory);
@@ -20,8 +16,7 @@ class CacheIndexStorage {
 
   File get _indexFile => File('${directory.path}/cache_index.json');
 
-  /// Loads the index from disk. Returns an empty map when the file is
-  /// missing or unreadable.
+  /// Loads the index from disk; empty map on missing/unreadable file.
   Future<Map<String, CacheItem>> load() async {
     try {
       final file = _indexFile;

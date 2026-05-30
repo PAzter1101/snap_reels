@@ -251,13 +251,8 @@ class ReelController extends GetxController
 
   // --- Lifecycle ---
 
-  /// Releases native player resources and waits for cleanup to finish.
-  ///
-  /// Prefer this over relying on [dispose] when the surrounding code
-  /// reallocates a [ReelController] (or any other libmpv-backed widget)
-  /// immediately after teardown — Flutter's [dispose] is synchronous and
-  /// cannot wait for native handles to be returned to the OS, so chaining
-  /// teardown + setup back-to-back can briefly double native memory use.
+  /// Awaitable teardown of native player resources. Use instead of
+  /// [dispose] when callers reallocate the controller immediately.
   Future<void> close() async {
     if (_isDisposed.value) return;
     _isDisposed.value = true;
@@ -278,6 +273,8 @@ class ReelController extends GetxController
     super.onClose();
   }
 
+  /// Synchronous teardown; fires [close] without awaiting. For ordered
+  /// native cleanup call `await close()` before disposal.
   @override
   void dispose() {
     if (!_isDisposed.value) {

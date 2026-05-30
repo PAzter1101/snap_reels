@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$VideoSource {
 
- String get url; VideoFormat get format;@VideoFormatMapConverter() Map<VideoFormat, String>? get alternativeSources; String? get quality; int? get bitrate; Size? get dimensions;
+ String get url; VideoFormat get format;@VideoFormatMapConverter() Map<VideoFormat, String>? get alternativeSources; String? get quality; int? get bitrate; VideoSize? get dimensions;
 /// Create a copy of VideoSource
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,11 +48,11 @@ abstract mixin class $VideoSourceCopyWith<$Res>  {
   factory $VideoSourceCopyWith(VideoSource value, $Res Function(VideoSource) _then) = _$VideoSourceCopyWithImpl;
 @useResult
 $Res call({
- String url, VideoFormat format,@VideoFormatMapConverter() Map<VideoFormat, String>? alternativeSources, String? quality, int? bitrate, Size? dimensions
+ String url, VideoFormat format,@VideoFormatMapConverter() Map<VideoFormat, String>? alternativeSources, String? quality, int? bitrate, VideoSize? dimensions
 });
 
 
-$SizeCopyWith<$Res>? get dimensions;
+$VideoSizeCopyWith<$Res>? get dimensions;
 
 }
 /// @nodoc
@@ -73,19 +73,19 @@ as VideoFormat,alternativeSources: freezed == alternativeSources ? _self.alterna
 as Map<VideoFormat, String>?,quality: freezed == quality ? _self.quality : quality // ignore: cast_nullable_to_non_nullable
 as String?,bitrate: freezed == bitrate ? _self.bitrate : bitrate // ignore: cast_nullable_to_non_nullable
 as int?,dimensions: freezed == dimensions ? _self.dimensions : dimensions // ignore: cast_nullable_to_non_nullable
-as Size?,
+as VideoSize?,
   ));
 }
 /// Create a copy of VideoSource
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SizeCopyWith<$Res>? get dimensions {
+$VideoSizeCopyWith<$Res>? get dimensions {
     if (_self.dimensions == null) {
     return null;
   }
 
-  return $SizeCopyWith<$Res>(_self.dimensions!, (value) {
+  return $VideoSizeCopyWith<$Res>(_self.dimensions!, (value) {
     return _then(_self.copyWith(dimensions: value));
   });
 }
@@ -170,7 +170,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  VideoFormat format, @VideoFormatMapConverter()  Map<VideoFormat, String>? alternativeSources,  String? quality,  int? bitrate,  Size? dimensions)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  VideoFormat format, @VideoFormatMapConverter()  Map<VideoFormat, String>? alternativeSources,  String? quality,  int? bitrate,  VideoSize? dimensions)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _VideoSource() when $default != null:
 return $default(_that.url,_that.format,_that.alternativeSources,_that.quality,_that.bitrate,_that.dimensions);case _:
@@ -191,7 +191,7 @@ return $default(_that.url,_that.format,_that.alternativeSources,_that.quality,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  VideoFormat format, @VideoFormatMapConverter()  Map<VideoFormat, String>? alternativeSources,  String? quality,  int? bitrate,  Size? dimensions)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  VideoFormat format, @VideoFormatMapConverter()  Map<VideoFormat, String>? alternativeSources,  String? quality,  int? bitrate,  VideoSize? dimensions)  $default,) {final _that = this;
 switch (_that) {
 case _VideoSource():
 return $default(_that.url,_that.format,_that.alternativeSources,_that.quality,_that.bitrate,_that.dimensions);case _:
@@ -211,7 +211,7 @@ return $default(_that.url,_that.format,_that.alternativeSources,_that.quality,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  VideoFormat format, @VideoFormatMapConverter()  Map<VideoFormat, String>? alternativeSources,  String? quality,  int? bitrate,  Size? dimensions)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  VideoFormat format, @VideoFormatMapConverter()  Map<VideoFormat, String>? alternativeSources,  String? quality,  int? bitrate,  VideoSize? dimensions)?  $default,) {final _that = this;
 switch (_that) {
 case _VideoSource() when $default != null:
 return $default(_that.url,_that.format,_that.alternativeSources,_that.quality,_that.bitrate,_that.dimensions);case _:
@@ -242,7 +242,7 @@ class _VideoSource extends VideoSource {
 
 @override final  String? quality;
 @override final  int? bitrate;
-@override final  Size? dimensions;
+@override final  VideoSize? dimensions;
 
 /// Create a copy of VideoSource
 /// with the given fields replaced by the non-null parameter values.
@@ -277,11 +277,11 @@ abstract mixin class _$VideoSourceCopyWith<$Res> implements $VideoSourceCopyWith
   factory _$VideoSourceCopyWith(_VideoSource value, $Res Function(_VideoSource) _then) = __$VideoSourceCopyWithImpl;
 @override @useResult
 $Res call({
- String url, VideoFormat format,@VideoFormatMapConverter() Map<VideoFormat, String>? alternativeSources, String? quality, int? bitrate, Size? dimensions
+ String url, VideoFormat format,@VideoFormatMapConverter() Map<VideoFormat, String>? alternativeSources, String? quality, int? bitrate, VideoSize? dimensions
 });
 
 
-@override $SizeCopyWith<$Res>? get dimensions;
+@override $VideoSizeCopyWith<$Res>? get dimensions;
 
 }
 /// @nodoc
@@ -302,7 +302,7 @@ as VideoFormat,alternativeSources: freezed == alternativeSources ? _self._altern
 as Map<VideoFormat, String>?,quality: freezed == quality ? _self.quality : quality // ignore: cast_nullable_to_non_nullable
 as String?,bitrate: freezed == bitrate ? _self.bitrate : bitrate // ignore: cast_nullable_to_non_nullable
 as int?,dimensions: freezed == dimensions ? _self.dimensions : dimensions // ignore: cast_nullable_to_non_nullable
-as Size?,
+as VideoSize?,
   ));
 }
 
@@ -310,12 +310,12 @@ as Size?,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SizeCopyWith<$Res>? get dimensions {
+$VideoSizeCopyWith<$Res>? get dimensions {
     if (_self.dimensions == null) {
     return null;
   }
 
-  return $SizeCopyWith<$Res>(_self.dimensions!, (value) {
+  return $VideoSizeCopyWith<$Res>(_self.dimensions!, (value) {
     return _then(_self.copyWith(dimensions: value));
   });
 }

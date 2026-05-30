@@ -5,58 +5,79 @@ import 'package:flutter/foundation.dart';
 import 'package:snap_reels/src/models/cache_item.dart';
 
 /// Removes expired and least-recently-used entries from a cache index.
-///
-/// All methods operate in-place on the passed `index` map. File deletion
-/// errors are logged and swallowed; the index entry is still removed so
-/// the state stays consistent with reality.
+/// Operates in-place; collapses entries sharing a `filePath`.
 class CacheEvictor {
   const CacheEvictor._();
 
   /// Drops entries whose [CacheItem.expiryTime] has passed and deletes
-  /// their files. Returns the keys that were removed.
+  /// their files. Returns the keys that were removed (including aliases).
   static Future<List<String>> evictExpired(
     Map<String, CacheItem> index,
   ) async {
     final now = DateTime.now();
-    final expiredKeys = <String>[];
-    for (final entry in index.entries) {
-      if (now.isAfter(entry.value.expiryTime)) {
-        expiredKeys.add(entry.key);
-        await _deleteFile(entry.value.filePath);
-      }
+    final expiredPaths = <String>{
+      for (final entry in index.entries)
+        if (now.isAfter(entry.value.expiryTime)) entry.value.filePath,
+    };
+    if (expiredPaths.isEmpty) return const [];
+    for (final path in expiredPaths) {
+      await _deleteFile(path);
     }
-    expiredKeys.forEach(index.remove);
-    return expiredKeys;
+    return _removeByFilePath(index, expiredPaths);
   }
 
   /// Drops least-recently-used entries until the total size fits inside
-  /// [maxBytes]. Returns the entries that were evicted.
+  /// [maxBytes]. Entries sharing a `filePath` are collapsed by path.
   static Future<List<CacheItem>> evictToFit(
     Map<String, CacheItem> index,
     int maxBytes,
   ) async {
-    final totalSize = index.values.fold<int>(
-      0,
-      (sum, item) => sum + item.fileSize,
-    );
+    final sizeByPath = <String, int>{};
+    final oldestByPath = <String, DateTime>{};
+    for (final item in index.values) {
+      sizeByPath[item.filePath] =
+          (sizeByPath[item.filePath] ?? 0) + item.fileSize;
+      final current = oldestByPath[item.filePath];
+      if (current == null || item.lastAccessTime.isBefore(current)) {
+        oldestByPath[item.filePath] = item.lastAccessTime;
+      }
+    }
+
+    final totalSize = sizeByPath.values.fold<int>(0, (sum, v) => sum + v);
     if (totalSize <= maxBytes) return const [];
 
-    final sorted = index.values.toList()
-      ..sort((a, b) => a.lastAccessTime.compareTo(b.lastAccessTime));
+    final paths = sizeByPath.keys.toList()
+      ..sort((a, b) => oldestByPath[a]!.compareTo(oldestByPath[b]!));
 
     var remaining = totalSize;
-    final removed = <CacheItem>[];
-    for (final item in sorted) {
+    final removedPaths = <String>{};
+    for (final path in paths) {
       if (remaining <= maxBytes) break;
-      removed.add(item);
-      remaining -= item.fileSize;
+      removedPaths.add(path);
+      remaining -= sizeByPath[path]!;
     }
 
-    for (final item in removed) {
-      await _deleteFile(item.filePath);
-      index.remove(item.cacheKey);
+    for (final path in removedPaths) {
+      await _deleteFile(path);
     }
+    final removed = [
+      for (final entry in index.entries)
+        if (removedPaths.contains(entry.value.filePath)) entry.value,
+    ];
+    _removeByFilePath(index, removedPaths);
     return removed;
+  }
+
+  static List<String> _removeByFilePath(
+    Map<String, CacheItem> index,
+    Set<String> paths,
+  ) {
+    final keys = [
+      for (final entry in index.entries)
+        if (paths.contains(entry.value.filePath)) entry.key,
+    ];
+    keys.forEach(index.remove);
+    return keys;
   }
 
   static Future<void> _deleteFile(String path) async {

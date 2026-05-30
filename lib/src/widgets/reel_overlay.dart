@@ -158,13 +158,15 @@ class ReelOverlay extends StatelessWidget {
   }
 
   void _handleFollow(BuildContext context) {
-    if (reel.user?.id == null) return;
+    final user = reel.user;
+    if (user == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Following ${reel.user!.username}'),
+        content: Text('Following ${user.username}'),
         duration: const Duration(seconds: 2),
         backgroundColor: config.styling.accentColor,
       ),
     );
+    onFollow?.call();
   }
 }

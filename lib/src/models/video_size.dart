@@ -5,10 +5,11 @@ part 'video_size.g.dart';
 
 /// Width/height pair for a video frame.
 @freezed
-abstract class Size with _$Size {
-  /// Creates a [Size] from positional dimensions.
-  const factory Size(double width, double height) = _Size;
+abstract class VideoSize with _$VideoSize {
+  /// Creates a [VideoSize] from positional dimensions.
+  const factory VideoSize(double width, double height) = _VideoSize;
 
-  /// Deserializes a [Size] from JSON.
-  factory Size.fromJson(Map<String, Object?> json) => _$SizeFromJson(json);
+  /// Deserializes a [VideoSize] from JSON.
+  factory VideoSize.fromJson(Map<String, Object?> json) =>
+      _$VideoSizeFromJson(json);
 }

@@ -30,6 +30,19 @@ mixin _PlaybackMixin on GetxController, _ReelStateMixin {
     }
   }
 
+  /// Pauses every player in the pool, not just [currentPlayer].
+  Future<void> pauseAll() async {
+    if (_isDisposed.value) return;
+    for (final player in _players) {
+      try {
+        await player.pause();
+      } catch (e) {
+        debugPrint('Error pausing player: $e');
+      }
+    }
+    _updateAccumulatedPlayTime();
+  }
+
   Future<void> togglePlayPause() async {
     if (_isPlaying.value) {
       await pause();
@@ -69,17 +82,25 @@ mixin _PlaybackMixin on GetxController, _ReelStateMixin {
     }
   }
 
-  bool _visibilityTarget = true;
+  bool _appVisible = true;
+  bool _widgetVisible = true;
   bool _visibilityRunning = false;
 
+  bool get _visibilityTarget => _appVisible && _widgetVisible;
+
+  /// Widget-level visibility (TickerMode / route hidden / tab switched).
   void setVisibility({required bool visible}) {
-    _isVisible.value = visible;
-    _visibilityTarget = visible;
+    _widgetVisible = visible;
+    _isVisible.value = _visibilityTarget;
     unawaited(_drainVisibility());
   }
 
-  void setAppVisibility({required bool visible}) =>
-      setVisibility(visible: visible);
+  /// App-level visibility (foreground/background lifecycle).
+  void setAppVisibility({required bool visible}) {
+    _appVisible = visible;
+    _isVisible.value = _visibilityTarget;
+    unawaited(_drainVisibility());
+  }
 
   Future<void> _drainVisibility() async {
     if (_visibilityRunning) return;
@@ -90,7 +111,7 @@ mixin _PlaybackMixin on GetxController, _ReelStateMixin {
         final target = _visibilityTarget;
         try {
           if (!target) {
-            await pause();
+            await pauseAll();
           } else if (_config.autoPlay) {
             await play();
           }

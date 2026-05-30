@@ -145,7 +145,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
 
     return VisibilityDetector(
       key: Key('reel_${widget.reel.id}'),
-      onVisibilityChanged: (info) => unawaited(_onVisibilityChanged(info)),
+      onVisibilityChanged: _onVisibilityChanged,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -270,19 +270,21 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
     );
   }
 
-  Future<void> _onVisibilityChanged(VisibilityInfo info) async {
+  void _onVisibilityChanged(VisibilityInfo info) {
     final wasVisible = _isVisible.value;
     _isVisible.value = info.visibleFraction > 0.5;
 
     if (_isVisible.value && !wasVisible) {
-      await _initializeVideo();
+      unawaited(_initializeVideo());
       _syncPlayer();
       if (widget.controller.isReelActive(widget.reel)) {
-        await widget.controller.play();
+        unawaited(widget.controller.play());
       }
     } else if (!_isVisible.value && wasVisible) {
-      if (widget.controller.isReelActive(widget.reel)) {
-        await widget.controller.pause();
+      final player = _assignedPlayer;
+      if (player != null &&
+          widget.controller.getPlayerForReel(widget.reel) == player) {
+        unawaited(player.pause());
       }
     }
   }

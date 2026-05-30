@@ -209,7 +209,7 @@ class CacheManager {
       url: aliasUrl,
       filePath: existing.filePath,
       cacheKey: aliasKey,
-      fileSize: existing.fileSize,
+      fileSize: 0,
       createdAt: existing.createdAt,
       lastAccessTime: DateTime.now(),
       expiryTime: existing.expiryTime,
@@ -217,7 +217,9 @@ class CacheManager {
     await _storage.save(_cacheIndex);
   }
 
-  /// Removes the entry for [url] and deletes its file.
+  /// Removes the entry for [url] and deletes its file. Any alias entries
+  /// pointing at the same file are removed as well so the index stays
+  /// consistent with disk state.
   Future<void> removeCachedUrl(String url) async {
     if (!_isInitialized) return;
     final cacheKey = _cacheKey(url);
@@ -225,7 +227,7 @@ class CacheManager {
     if (item == null) return;
     final file = File(item.filePath);
     if (file.existsSync()) await file.delete();
-    _cacheIndex.remove(cacheKey);
+    _cacheIndex.removeWhere((_, entry) => entry.filePath == item.filePath);
     await _storage.save(_cacheIndex);
   }
 

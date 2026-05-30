@@ -18,7 +18,7 @@ abstract class VideoSource with _$VideoSource {
     @VideoFormatMapConverter() Map<VideoFormat, String>? alternativeSources,
     String? quality,
     int? bitrate,
-    Size? dimensions,
+    VideoSize? dimensions,
   }) = _VideoSource;
 
   const VideoSource._();

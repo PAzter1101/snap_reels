@@ -192,7 +192,7 @@ class _SnapReelsState extends State<SnapReels>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (!_isExternalController) {
-      _controller.dispose();
+      unawaited(_controller.close());
     }
     super.dispose();
   }
