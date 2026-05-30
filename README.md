@@ -14,7 +14,7 @@ Flutter package for building Instagram Reels / TikTok-style vertical video feeds
 - **DRM** — custom HTTP headers for authorization
 
 ### Performance
-- **Player pool** — fixed pool of 3 `media_kit` `Player`s. Decoders are reused across swipes via `player.open()` instead of create/dispose cycles.
+- **Player pool** — 2 / 3 / 4 `media_kit` `Player`s sized to the device class. Decoders are reused across swipes via `player.open()` instead of create/dispose cycles.
 - **Adaptive preload** — preload is reduced automatically on low-end devices.
 - **Memory pressure** — non-active players are stopped when the platform signals memory pressure.
 - **SHA-256 cache** — CDN tokens are stripped from the key so the same asset isn't cached multiple times.
@@ -27,11 +27,14 @@ Flutter package for building Instagram Reels / TikTok-style vertical video feeds
 - Play/pause animation, double-tap like, long-press pause.
 - Custom error and loading widgets.
 
+### Packaging
+- **Flutter plugin** — `android/consumer-rules.pro` ships the media_kit / libmpv ProGuard keep rules; R8 release builds work without host-side configuration.
+
 ## Installation
 
 ```yaml
 dependencies:
-  snap_reels: ^2.3.3
+  snap_reels: ^3.0.0
 ```
 
 ### Requirements

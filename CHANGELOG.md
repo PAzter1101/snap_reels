@@ -1,3 +1,46 @@
+## 3.0.0
+
+Major refactor across the public API, models, internals, and packaging.
+See the **2.x → 3.0.0** section in [README.md](README.md#2x--300) for the
+field mapping table and a before/after code example.
+
+### Breaking changes
+- **`ReelConfig` flattened fields grouped into sub-configs.** Colors / button visibility / sizes / builders / callbacks moved under `styling: ReelStylingConfig`, `actions: ReelActionsConfig`, `builders: ReelOverlayBuildersConfig`, `callbacks: ReelInteractionCallbacks`. See README migration table.
+- **Video frame size: `Size` → `VideoSize`.** Avoids the clash with `dart:ui.Size`; `VideoSource.dimensions` is now `VideoSize?`.
+- **Analytics bool parameters are named.** `trackLike(reelId, position, {required bool isLiked})`, `trackFollow(..., {required bool isFollowing})`, `setEnabled({required bool enabled})`.
+- **Removed dead controller stubs**: `toggleLike`, `incrementShare`, `downloadReel`, `blockUser`, `followUser`, the `refresh()` override, and `StreamingService.dispose()`. Hosts already receive the events through callbacks / `onRefresh`.
+- **Removed unwired `ReelConfig.preloadRange`** — configure preload via `preloadConfig: PreloadConfig(preloadAhead, preloadBehind)`.
+- **Models live in dedicated files**: `video_format.dart`, `video_size.dart`, `video_source.dart`, `reel_user.dart`, `reel_audio.dart`. `reel_model.dart` re-exports them for source compatibility.
+- **`ReelController.dispose()` is now best-effort.** It fires `close()` without awaiting (Flutter's sync `dispose()` cannot await). Use `await controller.close()` from a navigation hook when deterministic teardown is required.
+
+### New API
+- **Android Flutter plugin packaging.** Adds `android/consumer-rules.pro` with media_kit / libmpv keep-rules merged automatically through `consumerProguardFiles`. Host apps can drop the duplicates from their own `proguard-rules.pro`.
+- **`ReelController.close()`** — awaitable teardown of native (libmpv) handles.
+- **`ReelController.pauseAll()`** — pauses every player in the pool (used by hosts when the feed becomes hidden through a non-route mechanism like bottom-nav tab switch).
+- **`ReelController.setAppVisibility()` / `setVisibility()` split** — independent app-lifecycle and widget-visibility flags. Resuming the app while the widget is still hidden by a tab no longer triggers playback.
+- **`SnapReelItem`, `SnapReelsExtension.fromUrls`** — moved into separate files. `SnapReelsExtension.fromUrls` re-exported through the package barrel.
+- **Analytics shortcut extensions** — `trackVideoStarted`, `trackLike`, etc. moved into `AnalyticsServicePlaybackShortcuts` / `AnalyticsServiceInteractionShortcuts` extensions. Re-exported through `analytics_service.dart` so call sites still work via the singleton.
+- **Focused `*Utils` classes** — `FormatUtils`, `ColorUtils`, `MathUtils`, `ResponsiveUtils`, `TimingUtils`, `StringUtils`, `PlatformUtils`, `VideoUrlUtils`. `ReelUtils` remains as a delegating facade so existing call sites compile unchanged.
+
+### Bug fixes
+- **`_showCommentsBottomSheet` leaked `TextEditingController` / `FocusNode`.** Now wrapped in `try/finally` so the controllers are disposed when the sheet closes.
+- **Late visibility callback could pause a recycled player from the pool.** Pause now revalidates `controller.getPlayerForReel(reel) == _assignedPlayer` before calling `player.pause()`.
+- **Follow action no longer dropped the `onFollow` callback.** The default snackbar handler invokes the host callback after rendering.
+- **Block / follow callbacks no longer crash for reels without a `user`.** Null-guard added before invoking host callbacks.
+- **Cache LRU dual-budget bug.** Removed the parallel `_evictIfOverCacheSize` path (hardcoded 200 MB) that ran alongside `_enforceCacheSize` (configurable). A single `CacheEvictor.evictToFit` enforces `CacheConfig.maxCacheSize`.
+- **Cache alias double-counting and orphan entries.** Aliases created by `linkCachedUrl` store `fileSize: 0`; eviction collapses entries by `filePath` and removes every key sharing the deleted path.
+- **`evictToFit` could over-evict when a zero-size alias was the oldest entry for its path.** Pre-aggregation by path is now done before sorting and budget subtraction.
+- **`enablePullToRefresh` was broken.** The internal `refresh()` override only printed `'Refresh called'`; replaced with a direct call to `widget.config.onRefresh` from the `RefreshIndicator`.
+
+### Internal
+- All models migrated to `freezed`; generated `*.freezed.dart` / `*.g.dart` marked `linguist-generated` in `.gitattributes`.
+- Lint set switched to `very_good_analysis`; 207 `public_member_api_docs` docstrings added across the public API.
+- Large files decomposed: `reel_actions.dart`, `reel_overlay.dart`, `reel_progress_indicator.dart`, `analytics_service.dart`, `cache_manager.dart`, `snap_reels_widget.dart` — split into focused widgets / services (`ReelCommentsSheet`, `ReelMoreOptionsSheet`, `ReelMusicAvatar`, `FloatingHeartOverlay`, `ReelActionButton`, `ReelUserInfoOverlay`, `ReelBottomControls`, `ReelOverlayGestureLayer`, `ProgressTrackBar`, `ReelProgressTimeLabels`, `ScrubThumbnailPreview`, `CacheIndexStorage`, `CacheEvictor`, `AnalyticsSummary`, `AnalyticsCalculations`, `AnalyticsDeviceInfoCollector`).
+- `ReelActions` and `ReelOverlay` are now `StatelessWidget`s; animation state moved into the dedicated child widgets.
+- README rewritten in English with a 2.x → 3.0.0 migration guide.
+
+---
+
 ## 2.3.3
 
 ### Bug Fixes
