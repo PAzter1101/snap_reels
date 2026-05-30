@@ -39,10 +39,9 @@ dependencies:
 
 ### Requirements
 - Flutter ≥ 3.0
-- Android 5.0+ (real device)
-- iOS 12+
+- Android 5.0+, iOS 12+, macOS 10.14+, Linux, Windows, Web
 
-> **⚠️ Android emulator is not supported** — media_kit uses hardware decoders via libmpv that don't work on the emulator. Test on a real device (USB or [wireless debugging](https://developer.android.com/studio/run/device#wireless)).
+> **⚠️ Android emulator is not supported.** On a real Android device media_kit uses libmpv through JNI + hardware MediaCodec; the emulator's `goldfish` codec path doesn't deliver a usable decoder, so playback stays on a black screen. The other platforms (iOS / macOS / Linux / Windows / Web) work in VMs and browsers because they use libmpv as a native binary directly or HTML5 `<video>` on web, without the MediaCodec abstraction. Test on a real Android device (USB or [wireless debugging](https://developer.android.com/studio/run/device#wireless)).
 
 ## Quick start
 

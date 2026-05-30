@@ -1,3 +1,14 @@
+## 3.1.0
+
+### New platforms
+- iOS, macOS, Linux, Windows, and Web are now declared in `flutter.plugin.platforms` with no-op shim plugins. 3.0.0 declared only Android, which made pub.dev list the package as Android-only; 3.1.0 restores the wide platform coverage that pre-3.0.0 releases got transitively through `media_kit`.
+
+### Documentation
+- CHANGELOG translated to English (was a mix of Russian and English).
+- README clarifies the Android-emulator caveat: the underlying `media_kit` works in macOS / Linux / Windows / Web VMs and browsers, but Android's emulator codec path does not deliver a usable hardware decoder.
+
+---
+
 ## 3.0.0
 
 Major refactor across the public API, models, internals, and packaging.
@@ -43,162 +54,156 @@ field mapping table and a before/after code example.
 
 ## 2.3.3
 
-### Bug Fixes
-- **Streaming-видео зависало через 1–2 секунды без восстановления.** libavformat по умолчанию не переподключается при transient HTTP error / keep-alive close. Перед `player.open()` теперь выставляется набор streaming-tunables: `demuxer-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=2`, `network-timeout=30`, `hwdec=auto-safe`, `force-seekable=yes`, `cache=yes,cache-secs=10`, `demuxer-readahead-secs=20`. См. [media-kit/media-kit#959](https://github.com/media-kit/media-kit/issues/959).
+### Bug fixes
+- **Streaming video stalled after 1–2 seconds with no recovery.** libavformat doesn't reconnect on transient HTTP errors or keep-alive close by default. A set of streaming tunables is now applied before `player.open()`: `demuxer-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=2`, `network-timeout=30`, `hwdec=auto-safe`, `force-seekable=yes`, `cache=yes,cache-secs=10`, `demuxer-readahead-secs=20`. See [media-kit/media-kit#959](https://github.com/media-kit/media-kit/issues/959).
 
 ---
 
 ## 2.3.2
 
-### Bug Fixes
-- **Видео зависало через 1–2 секунды после старта на release-сборке Android** — `Video` widget из `media_kit_video` рендерился только после первого декодированного кадра (`_hasFirstFrame`), до этого момента в дереве стоял `SizedBox.shrink()`. Surface texture для libmpv создаётся вместе с widget'ом, поэтому в release-сборках с быстрым AOT-стартом плеер мог инициализироваться раньше, чем Flutter добавлял `Video` в дерево, и libmpv оставался без render sink — декодирование первого буфера проходило, дальше playback зависал. Лечилось ручным переходом приложения в background и обратно (Flutter перерисовывал дерево, surface наконец привязывался). Теперь `Video` всегда в дереве с момента первого build, thumbnail рисуется поверх и скрывается на первом кадре. Соответствует описанию [media-kit/media-kit#909](https://github.com/media-kit/media-kit/issues/909).
+### Bug fixes
+- **Video stalled 1–2 seconds after start in Android release builds.** `media_kit_video`'s `Video` widget rendered only after the first decoded frame; before that the tree held a `SizedBox.shrink()`. The libmpv surface texture is created with the widget, so in AOT release builds the player could initialize before Flutter inserted `Video` into the tree, leaving libmpv without a render sink. The fix keeps `Video` in the tree from the first build and hides the thumbnail on the first frame. See [media-kit/media-kit#909](https://github.com/media-kit/media-kit/issues/909).
 
 ---
 
 ## 2.3.1
 
-Доводка фичи thumbnail-кэша из 2.3.0: prefetch соседних thumbnail-ов параллельно с видео, hook на host-side fallback URL при сбое первичной загрузки, переиспользование cache-записи между двумя URL'ами одного ресурса.
+Follow-up to the thumbnail cache from 2.3.0: prefetch adjacent thumbnails in parallel with video preload, host-side fallback URL hook, and cache aliasing between two URLs of the same resource.
 
-### Bug Fixes
-- **Thumbnail соседних reels не предзагружался** — в 2.3.0 `CacheManager` инициализировался, но `_preloadAdjacentVideos` тянул в декодер только видео; thumbnail-картинки качались строго в момент mount'а `CachedThumbnail`. На свайпе пользователь видел fallback-плейсхолдер пока шёл сетевой запрос. Теперь `_PreloadManagerMixin` параллельно с видео делает fire-and-forget `CacheManager.downloadAndCache` для thumbnail'ов в окне `[currentIndex − thumbnailPreloadBehind; currentIndex + thumbnailPreloadAhead]`. Дефолт `+5/-2` покрывает типичный burst-свайп без перегрузки disk LRU.
-- **Невозможно было обработать сбой загрузки thumbnail на стороне host'а** — `CachedThumbnail` молча падал в `fallback` widget'у при network/decode error, без шанса на ретрай через альтернативный URL. Добавлены `ReelConfig.thumbnailProxyUrlBuilder` (`String? Function(ReelModel)`) и `ReelConfig.thumbnailLoadTimeout` (default 3 сек): если первичный URL не отдал первый кадр за таймаут или упал — `CachedThumbnail` пересоздаёт future с URL'ом из билдера. Билдер получает `ReelModel`, чтобы host-приложение могло строить URL по `reel.id` (например, через свой бэкенд) без парсинга и URL-encode'а оригинала.
-- **Повторное открытие просмотренного reel заново уходило на сеть** — если первичная загрузка прошла через `thumbnailProxyUrlBuilder`, `cache_index` хранил запись только под fallback-ключом. На повторном mount'е `_resolvePath(primaryUrl)` отдавал cache miss и снова уходил в fallback. Теперь после успеха на fallback URL `CachedThumbnail` зовёт новый `CacheManager.linkCachedUrl(primary, fallback)`, который создаёт alias-запись на тот же `filePath`. Повторный mount отдаёт картинку синхронно из памяти.
+### Bug fixes
+- **Adjacent reel thumbnails were not prefetched.** In 2.3.0 the `CacheManager` was initialized, but `_preloadAdjacentVideos` only fed the decoder; thumbnails fetched on `CachedThumbnail` mount, so users saw the fallback placeholder during the network round-trip. `_PreloadManagerMixin` now fires `CacheManager.downloadAndCache` for thumbnails in the window `[currentIndex − thumbnailPreloadBehind; currentIndex + thumbnailPreloadAhead]` (defaults `+5/-2`).
+- **No host-side recovery for thumbnail failures.** `CachedThumbnail` silently fell into the `fallback` widget on network/decode errors. Added `ReelConfig.thumbnailProxyUrlBuilder` (`String? Function(ReelModel)`) and `ReelConfig.thumbnailLoadTimeout` (default 3 s): when the primary URL doesn't deliver a frame in time or fails, `CachedThumbnail` retries with the builder URL. The builder receives `ReelModel` so hosts can derive the URL from `reel.id`.
+- **Re-opening a viewed reel went back to the network.** If the primary fetch went through `thumbnailProxyUrlBuilder`, the cache index stored only under the fallback key. The next mount hit a miss on the primary URL. After a successful fallback fetch, `CachedThumbnail` now calls `CacheManager.linkCachedUrl(primary, fallback)` to register an alias entry that points at the same `filePath`. The next mount returns the cached image synchronously.
 
 ### New API
-- **`ReelConfig.thumbnailProxyUrlBuilder`** — `String? Function(ReelModel reel)?`, default `null`. Возврат `null` сохраняет первичный URL.
-- **`ReelConfig.thumbnailLoadTimeout`** — `Duration`, default `3s`. Без эффекта когда `thumbnailProxyUrlBuilder` не задан.
-- **`PreloadConfig.thumbnailPreloadAhead`** / **`thumbnailPreloadBehind`** — `int`, default `5` / `2`. `0/0` отключает prefetch thumbnails полностью.
-- **`CacheManager.linkCachedUrl(aliasUrl, existingUrl)`** — создаёт вторую запись в cache index, ссылающуюся на тот же `filePath`. Файл не копируется.
+- **`ReelConfig.thumbnailProxyUrlBuilder`** — `String? Function(ReelModel reel)?`, default `null`. Returning `null` keeps the primary URL.
+- **`ReelConfig.thumbnailLoadTimeout`** — `Duration`, default `3s`. No effect when `thumbnailProxyUrlBuilder` is unset.
+- **`PreloadConfig.thumbnailPreloadAhead`** / **`thumbnailPreloadBehind`** — `int`, defaults `5` / `2`. `0/0` disables thumbnail prefetch.
+- **`CacheManager.linkCachedUrl(aliasUrl, existingUrl)`** — adds a second cache index entry pointing at the same `filePath`. The file is not copied.
 
-### Breaking Changes
-- **`CachedThumbnail` конструктор**: параметр `url: String` заменён на `reel: ReelModel`. Виджету теперь нужен полный `ReelModel`, чтобы передать его в `proxyUrlBuilder`. Если в host-приложении использовался `CachedThumbnail(url: ..., fallback: ...)` напрямую (вне `ReelVideoPlayer`) — заменить на `CachedThumbnail(reel: ..., fallback: ...)`. Внутри пакета все вызовы (`reel_video_player`, `reel_error_overlay`) обновлены.
+### Breaking changes
+- **`CachedThumbnail` constructor**: `url: String` replaced by `reel: ReelModel` so the widget can hand the model to `proxyUrlBuilder`. Update direct uses of `CachedThumbnail(url:, fallback:)` to `CachedThumbnail(reel:, fallback:)`. Internal callers (`reel_video_player`, `reel_error_overlay`) are already updated.
 
 ---
 
 ## 2.3.0
 
-### New Features
-- **`ReelConfig.httpClient`** — необязательное поле `Dio?`, пробрасываемое в `CacheManager.initialize()`. Позволяет переиспользовать HTTP-клиент хост-приложения (например, с `NativeAdapter` + `CronetEngine`), чтобы делить connection pool, TLS session cache и interceptors при prefetch видео и thumbnails.
-- **`ReelConfig.errorDialogBuilder`** — кастомизация full-screen error-попапа в overlay. Билдер получает `ReelModel` текущего reel'а, `errorMessage` и два колбэка (`onRetry`, `onCancel`) — host-приложение может полностью заменить UI на свой дизайн и показать контекст (например, thumbnail) о каком именно видео идёт речь.
-- **`ReelConfig.bufferingBuilder`** — кастомизация индикатора буферизации в overlay. Билдер возвращает произвольный виджет вместо дефолтного `CircularProgressIndicator` с надписью «Buffering...».
-- **Новые публичные виджеты** — `ReelErrorOverlay` и `ReelBufferingIndicator` вынесены из `reel_overlay.dart` как переиспользуемые building blocks; билдеры выше вызывают их или пользовательский UI.
-- **`ReelConfig.thumbnailFallbackBuilder`** — кастомный виджет-заглушка вместо чёрного `Container` когда `thumbnailUrl` пустой или загрузка упала. Билдер получает `ReelModel`, поэтому host-приложение может показать content-specific placeholder (градиент, иконку, лого, инициалы).
-- **Thumbnail идёт через `CacheManager`** — новый внутренний виджет `CachedThumbnail` заменил `Image.network` в `ReelVideoPlayer`. Теперь thumbnail-запросы используют тот же `Dio` (с native-адаптером/Cronet при соответствующей настройке host-приложения), попадают в общий connection pool и сохраняются на диск по LRU. Ошибки скачивания и декодирования попадают в `debugPrint` для диагностики.
-- **Настраиваемые tap targets без влияния на визуал** — пять новых полей в `ReelConfig`: `actionMinTapTargetSize` (дефолт `44` — равно прошлому поведению с `padding: EdgeInsets.all(8)` вокруг 28pt иконки), `actionIconSize` (дефолт `28`), `likeButtonSize` (дефолт `32`), `actionSpacing` (дефолт `16`), `hashtagMinTapTargetSize` (дефолт `0` — hit area равна тексту, как было). `actionMinTapTargetSize` и `hashtagMinTapTargetSize` задают **минимальный размер кликабельной области** через `Container(constraints:, alignment: center)` + `HitTestBehavior.opaque` — визуальный размер иконки/текста при этом не меняется. Дефолты сохраняют обратную совместимость — потребители могут поднять значения до 48/56 для Apple HIG / Material accessibility compliance или плотных UX. Затронутые элементы: action buttons (comment/share/bookmark/download/more) в `reel_actions.dart` и hashtag-чипы в `reel_overlay.dart`. Остальные tappable-элементы overlay (bottom-controls `IconButton`'ы, retry в inline error, Material-диалоги) уже имеют 48pt tap-таргеты встроенно.
+### New features
+- **`ReelConfig.httpClient`** — optional `Dio?` forwarded to `CacheManager.initialize()`. Lets hosts share their HTTP stack (e.g. `NativeAdapter` + `CronetEngine`) with thumbnail / video prefetch, including connection pool, TLS session cache, and interceptors.
+- **`ReelConfig.errorDialogBuilder`** — customize the full-screen error popup. The builder receives `ReelModel`, `errorMessage`, and `onRetry` / `onCancel` callbacks.
+- **`ReelConfig.bufferingBuilder`** — custom buffering indicator instead of the default spinner.
+- **New public widgets** — `ReelErrorOverlay` and `ReelBufferingIndicator` extracted from `reel_overlay.dart` as reusable building blocks; the builders above call them or host UI.
+- **`ReelConfig.thumbnailFallbackBuilder`** — placeholder widget when `thumbnailUrl` is missing or fails. Receives `ReelModel` so hosts can render a content-specific placeholder.
+- **Thumbnails go through `CacheManager`.** A new internal `CachedThumbnail` widget replaces `Image.network` in `ReelVideoPlayer`. Thumbnails now share the host `Dio` and the disk LRU.
+- **Configurable tap targets without changing visuals.** Five new fields in `ReelConfig`: `actionMinTapTargetSize` (default `44`), `actionIconSize` (`28`), `likeButtonSize` (`32`), `actionSpacing` (`16`), `hashtagMinTapTargetSize` (`0`). The min-tap-target sizes set the hit area via `Container(constraints:, alignment: center)` + `HitTestBehavior.opaque` without resizing the icon/text.
 
-### Bug Fixes
-- **Инициализация `CacheManager`** — починен латентный баг: поля `_dio` и `_config` были объявлены как `late` и никогда не присваивались, а `_isInitialized` был `final bool = false`. Из-за этого любой вызов `downloadAndCache` реально ничего не кэшировал (ошибки глушились `Future.microtask`). Теперь `CacheManager.instance.initialize()` вызывается из `ReelController.initialize()` с параметрами из `ReelConfig`, идемпотентен и корректно выставляет `_isInitialized`.
-- **Порядок проверок в `ReelController.initialize`** — валидация пустого списка reels перенесена до вызова `MediaKit.ensureInitialized()`. Пустой `SnapReels(reels: [])` больше не требует наличия libmpv на хосте.
-- **Thumbnail не перекрывается чёрным `Video`** — до первого декодированного кадра `ReelVideoPlayer` теперь держит `Video` скрытым (подписка на `player.stream.width`). Раньше media_kit рендерил solid-black background поверх thumbnail всё время буферизации и после ошибки.
-- **`Buffering…` больше не рисуется поверх error-диалога** — overlay использует `if/else if`: при `hasError == true` buffering-индикатор не показывается, даже если стрим буферизации продолжает тикать.
+### Bug fixes
+- **`CacheManager` initialization.** Fixed a latent bug: `_dio` / `_config` were `late` but never assigned, and `_isInitialized` was a `final bool = false`. Every `downloadAndCache` call was effectively a no-op (errors swallowed by `Future.microtask`). `CacheManager.instance.initialize()` is now called from `ReelController.initialize()` with parameters from `ReelConfig`, is idempotent, and sets `_isInitialized` correctly.
+- **Validation order in `ReelController.initialize`.** Empty `reels` list validation moved before `MediaKit.ensureInitialized()`, so `SnapReels(reels: [])` no longer requires libmpv on the host.
+- **Black `Video` no longer covers the thumbnail.** Until the first decoded frame, `ReelVideoPlayer` keeps `Video` hidden (subscribed to `player.stream.width`). Previously media_kit rendered a solid black background over the thumbnail during buffering and after errors.
+- **`Buffering…` no longer renders on top of the error dialog.** The overlay uses `if/else if`: when `hasError == true` the buffering indicator is not shown.
 
 ### Dependencies
-- **Удалён `share_plus`** — был заявлен в `pubspec.yaml`, но нигде не использовался в коде пакета.
-- **`wakelock_plus` ^1.5.1 → ^1.6.0** (транзитивно тянет `win32 ^6.0.0` и `package_info_plus ^10`).
-- **`device_info_plus` ^12.4.0 → ^13.0.0** (API потребителя без изменений, только `win32` bump и повышенные минимумы SDK).
-- **Environment** поднят до `Dart ^3.10.0`, `Flutter >=3.38.1` — требование `device_info_plus 13.1.0` / `wakelock_plus 1.6.0`. На `flutter 3.41.5` (текущая в CI GameReel) — работает без замечаний.
+- Removed `share_plus` (declared in `pubspec.yaml` but unused).
+- `wakelock_plus` ^1.5.1 → ^1.6.0 (transitively pulls `win32 ^6.0.0` and `package_info_plus ^10`).
+- `device_info_plus` ^12.4.0 → ^13.0.0 (consumer API unchanged).
+- Environment raised to `Dart ^3.10.0`, `Flutter >=3.38.1`.
 
 ### Maintenance
-- Добавлен unit-тест `cache_manager_test.dart`: проверяет идемпотентность `initialize()` и работоспособность публичного API после инициализации (отсутствие `LateInitializationError`).
-- В `CachedThumbnail.errorBuilder` заменены `__` на `_` (новый lint `unnecessary_underscores` в Dart ≥3.10).
+- Added `cache_manager_test.dart` covering `initialize()` idempotency and absence of `LateInitializationError`.
+- `CachedThumbnail.errorBuilder` updated for the `unnecessary_underscores` lint added in Dart ≥3.10.
 
 ---
 
 ## 2.2.0
 
-### New Features
-- **`showHashtags`** в `ReelConfig` — управляет отображением хештегов под описанием. По умолчанию `true` (обратная совместимость). При `false` блок `#hashtag` полностью скрывается.
+### New features
+- **`ReelConfig.showHashtags`** — controls whether hashtag chips are rendered under the caption. Defaults to `true` (backward compatible).
 
-### Bug Fixes
-- **SafeArea в контекстном меню** — `_showMoreOptions()` bottom sheet теперь обёрнут в `SafeArea(top: false)`. На устройствах с gesture navigation bar (Samsung A54 и др.) нижние пункты меню больше не перекрываются системной панелью.
+### Bug fixes
+- **SafeArea in the more menu** — `_showMoreOptions()` bottom sheet is now wrapped in `SafeArea(top: false)`. The bottom menu items no longer hide behind the gesture navigation bar on devices like Samsung A54.
 
 ### Maintenance
-- Обновлены зависимости: `connectivity_plus` ^7.1.1, `lottie` ^3.3.3, `lints` ^6.1.0.
+- Bumped `connectivity_plus` ^7.1.1, `lottie` ^3.3.3, `lints` ^6.1.0.
 
 ---
 
 ## 2.1.3
 
-### Bug Fixes
-- **Фикс "No active player with ID"** — при передаче внешнего уже инициализированного `ReelController` в `SnapReels`, виджет больше не вызывает `initialize()` повторно. Двойная инициализация вызывала `_resetPool()` во время активного preload, что приводило к fatal-ошибке `StateError: Bad state: No active player with ID 1` из media_kit.
-- **Guard в `_preloadVideo` и `_initializeCurrentVideo`** — добавлена проверка на пустой пул и disposed-состояние перед работой с Player'ами, предотвращая краш при race condition.
+### Bug fixes
+- **"No active player with ID" crash.** When a pre-initialized `ReelController` was passed to `SnapReels`, the widget called `initialize()` again. The double init triggered `_resetPool()` mid-preload and surfaced as `StateError: Bad state: No active player with ID 1` from media_kit. The widget now skips re-initialization when the controller is already initialized.
+- **Guard in `_preloadVideo` and `_initializeCurrentVideo`** — empty-pool and disposed checks added before any Player call, preventing races during teardown.
 
 ### Maintenance
-- Замена устаревшего `flutter_lints` на `lints: ^5.1.1` (в пакете и в example).
-- Обновлены зависимости: `connectivity_plus` ^7.1.0, `device_info_plus` ^12.4.0, `share_plus` ^12.0.2, `mockito` ^5.6.4, `build_runner` ^2.13.1.
+- Replaced deprecated `flutter_lints` with `lints: ^5.1.1`.
+- Bumped `connectivity_plus` ^7.1.0, `device_info_plus` ^12.4.0, `share_plus` ^12.0.2, `mockito` ^5.6.4, `build_runner` ^2.13.1.
 
 ---
 
 ## 2.1.2
 
-### New Features
-- **`contentBottomPadding`** в `ReelConfig` — отступ снизу для overlay-контента (автор, лайки, actions). Позволяет поднять контент над tab bar или другими элементами UI.
-- **`showProgressIndicator` теперь работает** — параметр существовал в config, но не применялся в overlay. Теперь при `false` прогресс-бар скрывается, а контент опускается на его место.
+### New features
+- **`ReelConfig.contentBottomPadding`** — bottom inset for overlay content (user info, action stack). Use to lift content above a tab bar.
+- **`showProgressIndicator` now works.** The field existed in the config but wasn't honored by the overlay. When `false`, the progress bar is hidden and content shifts down into the freed space.
 
 ---
 
 ## 2.1.1
 
 ### Performance
-- **Адаптивный размер пула** — размер Player-пула теперь определяется автоматически по классу устройства: low — 2, medium — 3, high — 4. На мощных устройствах (Android SDK 31+, iPhone 11+) предзагружаются до 2 видео вперёд.
+- **Adaptive pool size.** Player pool size is derived from device class: low → 2, medium → 3, high → 4. High-end devices (Android SDK 31+, iPhone 11+) preload up to 2 videos ahead.
 
 ---
 
 ## 2.1.0
 
-### ⚠️ Breaking Changes
-- **Миграция на media_kit** — `video_player` заменён на `media_kit` + `media_kit_video` + `media_kit_libs_video`. Пакет `video_player` больше не используется. Приложение должно вызвать `MediaKit.ensureInitialized()` до использования (вызывается автоматически в `ReelController.initialize()`).
-- **Не работает на Android-эмуляторе** — media_kit не поддерживает рендеринг текстур на эмуляторе. Тестирование — только на реальных устройствах.
+### ⚠️ Breaking changes
+- **Migrated to `media_kit`.** Replaces `video_player` with `media_kit` + `media_kit_video` + `media_kit_libs_video`. Apps must call `MediaKit.ensureInitialized()` before use (called automatically from `ReelController.initialize()`).
+- **Doesn't work on the Android emulator** — media_kit doesn't support texture rendering on the emulator. Test on real devices only.
 
 ### Performance
-- **Player Pool (3 слота)** — вместо create/dispose цикла на каждый свайп теперь используется фиксированный пул из 3 `Player`'ов (prev/current/next). При переключении видео вызывается `player.open()` на существующем Player'е — hardware-декодер переиспользуется без пересоздания. Устраняет исчерпание пула декодеров и GC-давление при быстром скролле.
-- **Slot recycling** — при свайпе самый дальний слот автоматически переиспользуется для preload следующего видео. Без dispose/recreate нативных ресурсов.
+- **Player pool (3 slots).** Replaces per-swipe create/dispose with a fixed pool of 3 `Player`s. Each swipe calls `player.open()` on an existing Player so the hardware decoder is reused.
+- **Slot recycling.** On swipe, the furthest slot is recycled for the next preload — no native resource dispose/recreate.
 
 ### Architecture
-- **Декомпозиция reel_controller.dart** — 770 строк разбиты на 5 part-файлов:
-  - `_reel_state_mixin.dart` — реактивное состояние и геттеры
-  - `_video_lifecycle_mixin.dart` — пул Player'ов, slot assignment, stream-подписки
-  - `_preload_manager_mixin.dart` — preload через slot recycling
-  - `_playback_mixin.dart` — play/pause/volume/seek
-  - `reel_controller.dart` — тонкий оркестратор
+- **`reel_controller.dart` decomposition** — 770 lines split into 5 part files: `_reel_state_mixin.dart`, `_video_lifecycle_mixin.dart`, `_preload_manager_mixin.dart`, `_playback_mixin.dart`, plus the thin orchestrator `reel_controller.dart`.
 
-### Bug Fixes
-- **Фикс гонки `_isVideoInitializing`** — отменённые инициализации (serial mismatch) больше не сбрасывают `_isVideoInitializing` в `finally`, что исправляет баг с незагрузкой видео при быстром свайпе через 4-5 страниц.
-- **Фикс race condition при реинициализации** — пул создаётся один раз, при повторных `initialize()` выполняется `_resetPool()` (stop + clear assignments) вместо dispose/recreate, исключая ошибку "Player has been disposed".
+### Bug fixes
+- **`_isVideoInitializing` race.** Cancelled inits (serial mismatch) no longer clear `_isVideoInitializing` in `finally`, fixing a bug where videos didn't load after 4–5 fast swipes.
+- **Re-initialization race.** The pool is created once; repeated `initialize()` calls run `_resetPool()` (stop + clear assignments) instead of dispose/recreate, removing the "Player has been disposed" error.
 
 ### Maintenance
-- Убран `video_player` из зависимостей.
-- Убран хардкод `User-Agent` из `cache_manager.dart`.
-- Убраны `VideoPlayerController`-методы из `cache_manager.dart` и `streaming_service.dart` — пул управляет Player'ами самостоятельно.
-- `streaming_service.dart` упрощён до `resolveStreamingUrl()` — только выбор формата (HLS/DASH/MP4), без создания контроллеров.
-- `reel_progress_indicator.dart` переведён с `ValueListenableBuilder<VideoPlayerValue>` на `Obx` с `currentPosition`/`totalDuration`.
-- `reel_overlay.dart` — убраны прямые обращения к `VideoPlayerController`, используются Rx-геттеры.
+- Removed `video_player` dependency.
+- Removed hardcoded `User-Agent` from `cache_manager.dart`.
+- `streaming_service.dart` reduced to `resolveStreamingUrl()` (format selection only).
+- `reel_progress_indicator.dart` switched from `ValueListenableBuilder<VideoPlayerValue>` to `Obx` over `currentPosition` / `totalDuration`.
+- `reel_overlay.dart` — direct `VideoPlayerController` access removed in favor of Rx getters.
 
 ---
 
 ## 2.0.0
 
-### ⚠️ Breaking Changes
-- **`AwesomeReels` переименован в `SnapReels`** — главный виджет теперь называется `SnapReels`. Замените все вхождения `AwesomeReels(...)` на `SnapReels(...)` в вашем коде.
+### ⚠️ Breaking changes
+- **`AwesomeReels` renamed to `SnapReels`.** Replace all `AwesomeReels(...)` usages with `SnapReels(...)`.
 
 ### Deprecations
-- `StreamingConfig.enableAdaptiveBitrate` помечен `@Deprecated` — параметр не имел эффекта и будет удалён в v3.0.0. Просто уберите его из кода.
+- `StreamingConfig.enableAdaptiveBitrate` marked `@Deprecated` (no effect, to be removed in v3.0.0).
 
 ### Performance
-- **SHA-256 cache keys**: хэш кэша теперь вычисляется через SHA-256 вместо `url.hashCode`. Устраняет коллизии и недетерминированность на web-платформе.
-- **URL normalization**: CDN-токены (`token`, `sig`, `expires`, `auth` и др.) вырезаются перед хэшированием — одно видео с разными токенами авторизации больше не дублируется в кэше.
-- **Memory pressure handling**: при системном сигнале нехватки памяти все preloaded контроллеры диспоузятся, memory-кэш очищается. Предотвращает OOM-kill на устройствах с 2–3 GB RAM.
-- **Adaptive preload**: на слабых устройствах (Android SDK < 28, iPhone < 11 поколения) preloadAhead автоматически снижается до 1, preloadBehind до 0 — экономия ~2 hw-декодеров.
-- **Preload prioritization**: `next` preload выполняется первым (`await`), `prev` — fire-and-forget, так как 80% скроллов идут вниз.
-- **Debounced preload**: при быстром скролле preload промежуточных страниц пропускается (debounce 200 мс) — нет лишних init/dispose циклов.
-- **Serial-based init cancellation**: каждый `onPageChanged` присваивает уникальный serial; если до конца инициализации страница сменилась снова — инициализация отменяется и контроллер диспоузится. Устраняет баг: после 4-5 быстрых свайпов видео не воспроизводилось, показывался только thumbnail.
+- **SHA-256 cache keys.** Cache keys are now SHA-256 of the URL instead of `url.hashCode`. Removes collisions and platform non-determinism on web.
+- **URL normalization.** CDN tokens (`token`, `sig`, `expires`, `auth`, etc.) are stripped before hashing, so the same asset behind different signed URLs is cached once.
+- **Memory pressure handling.** On system memory-pressure signals all preloaded controllers are disposed and the in-memory cache cleared. Prevents OOM-kill on 2–3 GB devices.
+- **Adaptive preload.** On low-end devices (Android SDK < 28, iPhone < 11) `preloadAhead` drops to 1 and `preloadBehind` to 0, saving ~2 hardware decoders.
+- **Preload prioritization.** `next` is awaited first; `prev` is fire-and-forget (80 % of scrolls go down).
+- **Debounced preload.** Fast scrolling skips intermediate-page preload via a 200 ms debounce.
+- **Serial-based init cancellation.** Each `onPageChanged` assigns a unique serial; superseded inits are cancelled and their controllers disposed. Fixes the bug where 4–5 rapid swipes left the player on a thumbnail-only state.
 
 ### Maintenance
-- Добавлена зависимость `crypto: ^3.0.6` для SHA-256.
-- Файл `reel_config.dart` декомпозирован: `CacheConfig`/`PreloadConfig` → `cache_config.dart`, `StreamingConfig` → `streaming_config.dart`, `VideoPlayerConfig` → `video_player_config.dart`, `ProgressIndicatorConfig` → `progress_config.dart`. Публичное API не изменилось.
-- `CacheItem` и `CacheStats` вынесены в `models/cache_item.dart`.
-- Добавлен `DeviceClassifier` (`utils/device_classifier.dart`) с классификацией устройств: `low / medium / high`.
-- User-Agent изменён с `AwesomeReels/1.0.0` на `SnapReels/1.3.0`.
+- Added `crypto: ^3.0.6` dependency for SHA-256.
+- `reel_config.dart` split: `CacheConfig`/`PreloadConfig` → `cache_config.dart`, `StreamingConfig` → `streaming_config.dart`, `VideoPlayerConfig` → `video_player_config.dart`, `ProgressIndicatorConfig` → `progress_config.dart`. Public API unchanged.
+- `CacheItem` and `CacheStats` moved to `models/cache_item.dart`.
+- Added `DeviceClassifier` (`utils/device_classifier.dart`) with `low / medium / high` classification.
+- User-Agent changed from `AwesomeReels/1.0.0` to `SnapReels/1.3.0`.
 
 ---
 
