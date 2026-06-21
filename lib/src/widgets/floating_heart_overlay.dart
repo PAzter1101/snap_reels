@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:iconly/iconly.dart';
-
 /// Brief floating heart animation rendered above the target widget when
 /// the user double-likes a reel.
 class FloatingHeartOverlay {
@@ -75,7 +73,7 @@ class _FloatingHeartState extends State<_FloatingHeart>
             opacity: 1 - t,
             child: Transform.scale(
               scale: 0.5 + 0.5 * t,
-              child: const Icon(IconlyLight.heart, color: Colors.red, size: 30),
+              child: const Icon(Icons.favorite, color: Colors.red, size: 30),
             ),
           ),
         );

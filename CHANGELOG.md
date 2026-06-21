@@ -1,3 +1,13 @@
+## 3.2.0
+
+### Changes
+- Dropped the unmaintained `iconly` dependency (it extended `IconData`, which is now a `final` class and no longer compiles on recent Flutter). Default like / comment / share icons now use Material icons (`favorite`/`favorite_border`, `chat_bubble_outline`, `send_outlined`).
+
+### Fixes
+- `ReelController.peekNext` re-checks `hasClients` after each animation step, avoiding a `ScrollController not attached` assertion when the controller detaches mid-animation (e.g. the widget is torn down during the peek).
+
+---
+
 ## 3.1.0
 
 ### New platforms

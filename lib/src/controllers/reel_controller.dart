@@ -199,12 +199,14 @@ class ReelController extends GetxController
     if (_currentIndex.value >= _reels.length - 1) return;
 
     for (var i = 0; i < repeats; i++) {
+      if (!pc.hasClients) return;
       final baseOffset = pc.offset;
       await pc.animateTo(
         baseOffset + peekOffset,
         duration: dragDuration,
         curve: Curves.easeOut,
       );
+      if (!pc.hasClients) return;
       await pc.animateTo(
         baseOffset,
         duration: returnDuration,

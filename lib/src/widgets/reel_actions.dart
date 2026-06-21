@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:like_button/like_button.dart';
 
 import 'package:snap_reels/src/controllers/reel_controller.dart';
@@ -73,7 +72,7 @@ class ReelActions extends StatelessWidget {
           countPostion: CountPostion.bottom,
           likeCountAnimationType: LikeCountAnimationType.none,
           likeBuilder: (isLiked) => Icon(
-            IconlyLight.heart,
+            isLiked ? Icons.favorite : Icons.favorite_border,
             color: isLiked ? Colors.red : styling.textColor,
             size: actions.likeButtonSize,
           ),
@@ -96,7 +95,7 @@ class ReelActions extends StatelessWidget {
         spacing,
         if (actions.showCommentButton) ...[
           ReelActionButton(
-            icon: IconlyLight.chat,
+            icon: Icons.chat_bubble_outline,
             iconColor: styling.textColor,
             actions: actions,
             count: reel.commentsCount,
@@ -105,7 +104,7 @@ class ReelActions extends StatelessWidget {
           const SizedBox(height: 16),
         ],
         ReelActionButton(
-          icon: IconlyLight.send,
+          icon: Icons.send_outlined,
           iconColor: styling.textColor,
           actions: actions,
           count: reel.sharesCount,

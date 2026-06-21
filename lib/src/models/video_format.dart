@@ -7,8 +7,7 @@ enum VideoFormat {
   hls,
 
   /// Dynamic Adaptive Streaming over HTTP (`.mpd`).
-  dash
-  ;
+  dash;
 
   /// Parses a string representation; falls back to [VideoFormat.hls] for
   /// unknown values to preserve backward compatibility.

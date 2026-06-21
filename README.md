@@ -34,7 +34,7 @@ Flutter package for building Instagram Reels / TikTok-style vertical video feeds
 
 ```yaml
 dependencies:
-  snap_reels: ^3.0.0
+  snap_reels: ^3.2.0
 ```
 
 ### Requirements

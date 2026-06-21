@@ -18,7 +18,7 @@ step() {
 }
 
 step "flutter pub get"
-flutter pub get
+fvm flutter pub get
 
 step "dart run build_runner build --delete-conflicting-outputs"
 dart run build_runner build --delete-conflicting-outputs
@@ -60,8 +60,8 @@ start() {
 
 step "parallel (fail-fast): flutter analyze + flutter test + pub publish --dry-run"
 
-start flutter_analyze flutter analyze --fatal-infos --fatal-warnings
-start flutter_test    flutter test --fail-fast
+start flutter_analyze fvm flutter analyze --fatal-infos --fatal-warnings
+start flutter_test    fvm flutter test --fail-fast
 start pub_dry_run     dart pub publish --dry-run
 
 FAILED=0
